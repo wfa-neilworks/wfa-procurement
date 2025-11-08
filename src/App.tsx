@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { Toaster } from 'sonner'
 import { AuthProvider } from './hooks/useAuth'
+import { ThemeProvider } from './hooks/useTheme'
 import { Layout } from './components/layout/Layout'
 
 // Import pages
@@ -28,31 +29,33 @@ const queryClient = new QueryClient({
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Layout />}>
-              <Route index element={<HomePage />} />
-              <Route path="inventory/:category" element={<InventoryPage />} />
-              <Route path="suppliers" element={<SuppliersPage />} />
-              <Route path="sds" element={<SDSPage />} />
-              <Route path="pallets" element={<PalletsPage />} />
-              <Route path="order-forms" element={<OrderFormsPage />} />
-              <Route path="purchase-orders" element={<PurchaseOrdersPage />} />
-              <Route path="reports" element={<ReportsPage />} />
-              <Route path="settings" element={<SettingsPage />} />
-            </Route>
-          </Routes>
-        </BrowserRouter>
-      </AuthProvider>
-      <Toaster
-        position="top-right"
-        expand={true}
-        richColors
-        closeButton
-        duration={4000}
-      />
-      <ReactQueryDevtools initialIsOpen={false} />
+      <ThemeProvider>
+        <AuthProvider>
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<Layout />}>
+                <Route index element={<HomePage />} />
+                <Route path="inventory/:category" element={<InventoryPage />} />
+                <Route path="suppliers" element={<SuppliersPage />} />
+                <Route path="sds" element={<SDSPage />} />
+                <Route path="pallets" element={<PalletsPage />} />
+                <Route path="order-forms" element={<OrderFormsPage />} />
+                <Route path="purchase-orders" element={<PurchaseOrdersPage />} />
+                <Route path="reports" element={<ReportsPage />} />
+                <Route path="settings" element={<SettingsPage />} />
+              </Route>
+            </Routes>
+          </BrowserRouter>
+        </AuthProvider>
+        <Toaster
+          position="top-right"
+          expand={true}
+          richColors
+          closeButton
+          duration={4000}
+        />
+        <ReactQueryDevtools initialIsOpen={false} />
+      </ThemeProvider>
     </QueryClientProvider>
   )
 }
