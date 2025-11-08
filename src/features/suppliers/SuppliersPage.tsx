@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Plus, Pencil, Trash2, Search, Mail, Phone, FileCheck } from 'lucide-react'
+import { Plus, Pencil, Trash2, Search, Mail, Phone, FileCheck, Upload, X, Download } from 'lucide-react'
 import { toast } from 'sonner'
 import { supabase } from '../../lib/supabase'
 import { Button } from '../../components/ui/button'
@@ -41,6 +41,10 @@ export function SuppliersPage() {
     email: '',
     phone: '',
   })
+
+  const [certificates, setCertificates] = useState<Array<{ title: string; url: string }>>([])
+  const [uploadingFiles, setUploadingFiles] = useState(false)
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([])
 
   useEffect(() => {
     fetchSuppliers()
@@ -87,6 +91,9 @@ export function SuppliersPage() {
         email: supplier.email || '',
         phone: supplier.phone || '',
       })
+      // Load existing certificates
+      const existingCerts = supplier.certificates as any
+      setCertificates(Array.isArray(existingCerts) ? existingCerts : [])
     } else {
       setEditingSupplier(null)
       setFormData({
@@ -95,13 +102,89 @@ export function SuppliersPage() {
         email: '',
         phone: '',
       })
+      setCertificates([])
     }
+    setSelectedFiles([])
     setIsDialogOpen(true)
   }
 
   const handleCloseDialog = () => {
     setIsDialogOpen(false)
     setEditingSupplier(null)
+    setSelectedFiles([])
+  }
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || [])
+    const pdfFiles = files.filter(f => f.type === 'application/pdf')
+
+    if (pdfFiles.length !== files.length) {
+      toast.error('Only PDF files are allowed')
+    }
+
+    setSelectedFiles(prev => [...prev, ...pdfFiles])
+  }
+
+  const handleRemoveSelectedFile = (index: number) => {
+    setSelectedFiles(prev => prev.filter((_, i) => i !== index))
+  }
+
+  const handleDeleteCertificate = async (cert: { title: string; url: string }) => {
+    if (!confirm(`Delete certificate "${cert.title}"?`)) return
+
+    try {
+      // Extract file path from URL
+      const urlParts = cert.url.split('/certificates/')
+      if (urlParts.length === 2) {
+        const filePath = urlParts[1]
+        const { error } = await supabase.storage.from('certificates').remove([filePath])
+        if (error) throw error
+      }
+
+      setCertificates(prev => prev.filter(c => c.url !== cert.url))
+      toast.success(`Deleted certificate "${cert.title}"`)
+    } catch (error) {
+      console.error('Error deleting certificate:', error)
+      toast.error('Failed to delete certificate')
+    }
+  }
+
+  const uploadCertificates = async (supplierId: string, supplierName: string) => {
+    if (selectedFiles.length === 0) return []
+
+    setUploadingFiles(true)
+    const uploadedCerts: Array<{ title: string; url: string }> = []
+
+    try {
+      for (const file of selectedFiles) {
+        const fileExt = file.name.split('.').pop()
+        const fileName = `${supplierId}/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`
+
+        const { error: uploadError } = await supabase.storage
+          .from('certificates')
+          .upload(fileName, file)
+
+        if (uploadError) throw uploadError
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('certificates')
+          .getPublicUrl(fileName)
+
+        uploadedCerts.push({
+          title: file.name,
+          url: publicUrl
+        })
+      }
+
+      toast.success(`Uploaded ${uploadedCerts.length} certificate(s)`)
+      return uploadedCerts
+    } catch (error) {
+      console.error('Error uploading certificates:', error)
+      toast.error('Failed to upload some certificates')
+      return uploadedCerts
+    } finally {
+      setUploadingFiles(false)
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -113,12 +196,21 @@ export function SuppliersPage() {
     }
 
     try {
+      let supplierId: string
+
       if (editingSupplier) {
+        supplierId = editingSupplier.id
+
+        // Upload new certificates if any
+        const newCerts = await uploadCertificates(supplierId, formData.name)
+        const allCerts = [...certificates, ...newCerts]
+
         const updateData: SupplierUpdate = {
           name: formData.name,
           contact: formData.contact || null,
           email: formData.email || null,
           phone: formData.phone || null,
+          certificates: allCerts as any,
         }
 
         const { error } = await supabase
@@ -129,6 +221,7 @@ export function SuppliersPage() {
         if (error) throw error
         toast.success(`Successfully updated supplier "${formData.name}"`)
       } else {
+        // Create supplier first
         const insertData: SupplierInsert = {
           name: formData.name,
           contact: formData.contact || null,
@@ -136,11 +229,28 @@ export function SuppliersPage() {
           phone: formData.phone || null,
         }
 
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from('suppliers')
           .insert(insertData)
+          .select()
+          .single()
 
         if (error) throw error
+        supplierId = data.id
+
+        // Upload certificates
+        const newCerts = await uploadCertificates(supplierId, formData.name)
+
+        if (newCerts.length > 0) {
+          // Update supplier with certificates
+          const { error: updateError } = await supabase
+            .from('suppliers')
+            .update({ certificates: newCerts as any })
+            .eq('id', supplierId)
+
+          if (updateError) throw updateError
+        }
+
         toast.success(`Successfully added supplier "${formData.name}"`)
       }
 
@@ -317,12 +427,95 @@ export function SuppliersPage() {
                 />
               </div>
             </div>
+
+            {/* Certificates Section */}
+            <div className="space-y-3">
+              <label className="text-sm font-medium">Certificates (PDF)</label>
+
+              {/* File Upload */}
+              <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 hover:border-gray-400 transition-colors">
+                <label className="cursor-pointer flex flex-col items-center gap-2">
+                  <Upload className="h-8 w-8 text-gray-400" />
+                  <span className="text-sm text-gray-600">
+                    Click to upload or drag and drop
+                  </span>
+                  <span className="text-xs text-gray-500">PDF files only</span>
+                  <input
+                    type="file"
+                    multiple
+                    accept=".pdf"
+                    onChange={handleFileSelect}
+                    className="hidden"
+                  />
+                </label>
+              </div>
+
+              {/* Selected Files (to be uploaded) */}
+              {selectedFiles.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-xs text-gray-500">Ready to upload:</p>
+                  {selectedFiles.map((file, index) => (
+                    <div key={index} className="flex items-center justify-between p-2 bg-blue-50 rounded border border-blue-200">
+                      <div className="flex items-center gap-2">
+                        <FileCheck className="h-4 w-4 text-blue-600" />
+                        <span className="text-sm">{file.name}</span>
+                        <span className="text-xs text-gray-500">
+                          ({(file.size / 1024).toFixed(1)} KB)
+                        </span>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleRemoveSelectedFile(index)}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Existing Certificates */}
+              {certificates.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-xs text-gray-500">Uploaded certificates:</p>
+                  {certificates.map((cert, index) => (
+                    <div key={index} className="flex items-center justify-between p-2 bg-green-50 rounded border border-green-200">
+                      <div className="flex items-center gap-2">
+                        <FileCheck className="h-4 w-4 text-green-600" />
+                        <span className="text-sm">{cert.title}</span>
+                      </div>
+                      <div className="flex gap-1">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => window.open(cert.url, '_blank')}
+                        >
+                          <Download className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDeleteCertificate(cert)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
             <DialogFooter>
               <Button type="button" variant="outline" onClick={handleCloseDialog}>
                 Cancel
               </Button>
-              <Button type="submit">
-                {editingSupplier ? 'Update' : 'Add'} Supplier
+              <Button type="submit" disabled={uploadingFiles}>
+                {uploadingFiles ? 'Uploading...' : editingSupplier ? 'Update' : 'Add'} Supplier
               </Button>
             </DialogFooter>
           </form>
