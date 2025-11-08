@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { X, GripVertical } from 'lucide-react'
 import { toast } from 'sonner'
 import {
@@ -37,10 +37,14 @@ interface ProductWithQuantity extends Product {
   quantity: number
 }
 
-function SortableProductCard({ product, quantity, onQuantityChange }: {
+function SortableProductCard({ product, quantity, onQuantityChange, isFirst, inputRef, onTabPress, setInputRef }: {
   product: Product
   quantity: number
   onQuantityChange: (value: number) => void
+  isFirst?: boolean
+  inputRef?: React.RefObject<HTMLInputElement>
+  onTabPress?: () => void
+  setInputRef?: (el: HTMLInputElement | null) => void
 }) {
   const {
     attributes,
@@ -88,12 +92,27 @@ function SortableProductCard({ product, quantity, onQuantityChange }: {
             <div className="flex items-center gap-2">
               <label className="text-sm font-medium text-gray-700">Qty:</label>
               <Input
+                ref={(el) => {
+                  if (inputRef && 'current' in inputRef) {
+                    inputRef.current = el
+                  }
+                  if (setInputRef) {
+                    setInputRef(el)
+                  }
+                }}
                 type="number"
                 min="0"
                 value={quantity || ''}
                 onChange={(e) => onQuantityChange(parseInt(e.target.value) || 0)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Tab' && !e.shiftKey && onTabPress) {
+                    e.preventDefault()
+                    onTabPress()
+                  }
+                }}
                 className="w-24 text-center"
                 placeholder="0"
+                autoFocus={isFirst}
               />
             </div>
           </div>
@@ -107,6 +126,8 @@ export function UseFormDialog({ isOpen, onClose, form, onSuccess }: UseFormDialo
   const [products, setProducts] = useState<ProductWithQuantity[]>([])
   const [loading, setLoading] = useState(false)
   const [applying, setApplying] = useState(false)
+  const firstInputRef = useRef<HTMLInputElement>(null)
+  const inputRefs = useRef<Map<string, HTMLInputElement>>(new Map())
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -142,6 +163,11 @@ export function UseFormDialog({ isOpen, onClose, form, onSuccess }: UseFormDialo
         .map(p => ({ ...p, quantity: 0 }))
 
       setProducts(sortedProducts)
+
+      // Focus first input after products are loaded
+      setTimeout(() => {
+        firstInputRef.current?.focus()
+      }, 100)
     } catch (error) {
       console.error('Error loading products:', error)
       toast.error('Failed to load form products')
@@ -189,6 +215,15 @@ export function UseFormDialog({ isOpen, onClose, form, onSuccess }: UseFormDialo
     setProducts(prev =>
       prev.map(p => (p.id === productId ? { ...p, quantity } : p))
     )
+  }
+
+  const focusNextInput = (currentIndex: number) => {
+    const nextIndex = currentIndex + 1
+    if (nextIndex < products.length) {
+      const nextProductId = products[nextIndex].id
+      const nextInput = inputRefs.current.get(nextProductId)
+      nextInput?.focus()
+    }
   }
 
   const handleApplyDeductions = async () => {
@@ -284,12 +319,22 @@ export function UseFormDialog({ isOpen, onClose, form, onSuccess }: UseFormDialo
                 strategy={verticalListSortingStrategy}
               >
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {products.map((product) => (
+                  {products.map((product, index) => (
                     <SortableProductCard
                       key={product.id}
                       product={product}
                       quantity={product.quantity}
                       onQuantityChange={(qty) => updateQuantity(product.id, qty)}
+                      isFirst={index === 0}
+                      inputRef={index === 0 ? firstInputRef : undefined}
+                      onTabPress={() => focusNextInput(index)}
+                      setInputRef={(el) => {
+                        if (el) {
+                          inputRefs.current.set(product.id, el)
+                        } else {
+                          inputRefs.current.delete(product.id)
+                        }
+                      }}
                     />
                   ))}
                 </div>
