@@ -23,7 +23,14 @@
       "Bash(git fetch:*)",
       "Bash(git rm -rf .)",
       "Bash(cp:*)",
-      "Bash(rm:*)"
+      "Bash(rm:*)",
+      "Bash(vercel --version:*)",
+      "Bash(vercel --prod:*)",
+      "Bash(vercel login)",
+      "Bash(vercel whoami:*)",
+      "Bash(vercel logout:*)",
+      "Bash(basename:*)",
+      "Bash(git log:*)"
     ],
     "deny": [],
     "ask": []
