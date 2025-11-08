@@ -1,0 +1,52 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isAuthed() { return request.auth != null; }
+
+    // Inventory
+    match /products/{docId} {
+      allow read: if true;                 // public catalog
+      allow write: if isAuthed();          // updates require login
+    }
+    match /stock_movements/{docId} {
+      allow read: if true;                 // allow reporting
+      allow create: if isAuthed();         // append-only
+      allow update, delete: if false;      // protect audit trail
+    }
+
+    // Pallet Monitoring
+    match /pallet_unloads/{docId} {
+      allow read: if true;
+      allow write: if isAuthed();
+    }
+
+    // SDS
+    match /sdsChemicals/{docId} {
+      allow read: if true;
+      allow write: if isAuthed();
+    }
+
+    // Suppliers
+    match /suppliers/{docId} {
+      allow read: if true;
+      allow write: if isAuthed();
+    }
+
+    // Saved Forms (Home panel)
+    match /order_forms/{docId} {
+      allow read: if true;                 // keep public read, or switch to isAuthed() if private
+      allow write: if isAuthed();
+    }
+
+    // Purchase Orders (restricted): reads + writes require auth
+    match /purchase_orders/{docId} {
+      allow read, write: if isAuthed();
+    }
+
+    // Deny everything else
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
+

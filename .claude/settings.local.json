@@ -1,0 +1,28 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dir:*)",
+      "Bash(find:*)",
+      "Bash(npm create:*)",
+      "Bash(npm install)",
+      "Bash(git init:*)",
+      "Bash(npm install:*)",
+      "Bash(npx tailwindcss:*)",
+      "Bash(node node_modules/tailwindcss/lib/cli.js:*)",
+      "Bash(cat:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git config:*)",
+      "Bash(npm run dev:*)",
+      "Bash(git remote add:*)",
+      "Bash(git branch:*)",
+      "Bash(git push:*)",
+      "Bash(gh auth:*)",
+      "Bash(git remote:*)",
+      "Bash(npm run build:*)",
+      "Bash(git fetch:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

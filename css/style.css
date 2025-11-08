@@ -1,0 +1,597 @@
+/* =========================================================
+   WF Ops Suite — Styles (LOCKED sidebar, sticky headers)
+   ========================================================= */
+
+/* ---------- Reset ---------- */
+* { box-sizing: border-box; }
+html, body { margin:0; padding:0; }
+img { max-width:100%; display:block; }
+
+/* ---------- Theme Vars ---------- */
+:root{
+  /* layout */
+  --sidebar-w: 260px;            /* change this once to adjust sidebar width */
+  --sidebar-collapsed-w: 72px;   /* collapsed sidebar width */
+  --topbar-h: 56px;              /* top header height */
+  --toolbar-h: 52px;             /* inventory toolbar height */
+  --sticky-offset: calc(var(--topbar-h) + var(--toolbar-h));
+
+  /* colors */
+  --bg: #f6f9fc;
+  --panel: #ffffff;
+  --ink: #0f172a;
+  --muted: #6b7280;
+  --line: #e5e7eb;
+
+  --primary: #1d4ed8;
+  --primary-600:#2563eb;
+  --primary-700:#1e40af;
+
+  --success:#16a34a;
+  --danger:#dc2626;
+
+  --radius: 12px;
+}
+
+/* ---------- Base Typography / Page ---------- */
+html, body{
+  height:100%;
+  background:var(--bg);
+  color:var(--ink);
+  font:14px/1.45 ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Apple Color Emoji","Segoe UI Emoji";
+}
+
+/* Dark theme overrides */
+[data-theme="dark"]{
+  --bg: #0f172a;
+  --panel: #0b1220;
+  --ink: #e5e7eb;
+  --muted: #a1a1aa;
+  --line: #1f2937;
+
+  --primary: #6366f1;
+  --primary-600:#7c83f6;
+  --primary-700:#4f46e5;
+}
+
+/* Smooth theme transition */
+body, .main, .sidebar, .card, .table-nice, .toolbar, .topbar{
+  transition: background-color .2s ease, color .2s ease, border-color .2s ease;
+}
+
+.app{
+  height:100vh;
+  overflow:hidden;     /* page itself doesn't scroll */
+  display:block;       /* sidebar is fixed; main scrolls */
+}
+
+/* =========================================================
+   SIDEBAR (LOCKED OPEN — fixed & scrollable)
+   ========================================================= */
+.sidebar{
+  position: fixed !important;
+  left: 0; top: 0;
+  width: var(--sidebar-w) !important;
+  height: 100vh;
+  overflow:auto;
+  z-index: 200; /* always above sticky things in main */
+
+  background: linear-gradient(180deg, #0d2a62, #0a4aa0);
+  color:#eaf2ff;
+  padding:14px 12px 16px;
+  box-shadow: inset -1px 0 0 rgba(255,255,255,.06);
+}
+[data-theme="dark"] .sidebar{
+  background: linear-gradient(180deg, #0b1220, #0b1b33);
+  color:#dbeafe;
+}
+
+/* Collapsible sidebar behavior */
+.sidebar.collapsed{ width: var(--sidebar-collapsed-w) !important; }
+.sidebar.collapsed .brand-text{ display:none; }
+.sidebar.collapsed .nav-children,
+.sidebar.collapsed .submenu,
+.sidebar.collapsed .subnav,
+.sidebar.collapsed .children{ display:none !important; }
+.sidebar.collapsed .chev, .sidebar.collapsed .text{ display:none !important; }
+.sidebar.collapsed a, .sidebar.collapsed button{ justify-content:center; gap:0; }
+.sidebar.collapsed .brand{ justify-content:center; }
+
+/* Shift main content when sidebar is collapsed */
+.sidebar.collapsed + .main{ margin-left: var(--sidebar-collapsed-w) !important; }
+
+/* brand block */
+.brand{
+  display:flex; align-items:center; gap:12px;
+  padding:4px 6px 14px;
+}
+
+/* Bigger brand logo */
+.brand .logo{
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
+  font-size: 15px; /* keeps letters nicely centered if you show text */
+}
+
+.brand .title{ font-weight:800; color:#fff; }
+.brand .subtitle{ display:block; font-size:12px; opacity:.85 }
+
+/* generic menu containers (works with your current markup) */
+.sidebar .nav,
+.sidebar .menu,
+.sidebar .links { display:flex; flex-direction:column; gap:6px; margin-top:6px; }
+
+/* each link/button takes a full row */
+.sidebar a,
+.sidebar button{
+  display:flex; align-items:center; gap:10px;
+  width:100%;
+  padding:10px 12px;
+  border-radius:10px;
+  text-decoration:none;
+  color:#e9efff;
+  background:transparent;
+  border:0;
+  cursor:pointer;
+  line-height:1.2;
+}
+.sidebar a:hover,
+.sidebar button:hover{ background:rgba(255,255,255,.08); }
+.sidebar .active{ background:rgba(255,255,255,.16) !important; color:#fff; }
+
+/* submenus (support several common class names) */
+.sidebar .nav-children,
+.sidebar .submenu,
+.sidebar .subnav,
+.sidebar .children{
+  display:flex !important;        /* never collapse */
+  flex-direction:column;
+  gap:6px;
+  margin:6px 0 0 0;
+}
+.sidebar .nav-children a,
+.sidebar .submenu a,
+.sidebar .subnav a,
+.sidebar .children a{
+  padding-left:32px;              /* indent submenu items */
+  font-size:13px;
+  opacity:.95;
+}
+
+/* hide any collapse toggles if present */
+.sidebar .toggle,
+.sidebar [data-collapse],
+.sidebar .collapse-btn{ display:none !important; }
+
+/* footer text in sidebar */
+.sidebar .footer{ color:#cdd6ff; font-size:12px; margin-top:10px; }
+
+/* =========================================================
+   MAIN COLUMN (scrolls vertically)
+   ========================================================= */
+.main{
+  position: relative;
+  margin-left: var(--sidebar-w) !important; /* space for fixed sidebar */
+  height: 100vh;
+  overflow:auto;                   /* vertical scroll lives here */
+  display:flex;
+  flex-direction:column;
+  min-width:0;
+  background:var(--bg);
+}
+
+/* Top header (sticky inside main) */
+.topbar{
+  position: sticky;
+  top:0;
+  z-index:60;                      /* below sidebar (200) so it never blocks clicks */
+  background:var(--panel);
+  border-bottom:1px solid var(--line);
+  height:var(--topbar-h);
+  display:flex; align-items:center; gap:14px;
+  padding:10px 16px;
+}
+.topbar h1{ font-size:22px; margin:0; }
+
+/* status pill in header */
+.status .pill{
+  display:inline-block; padding:4px 8px; border-radius:999px;
+  background:#e8eefc; color:#1e3a8a; font-weight:700; font-size:12px;
+}
+
+/* Page content wrapper */
+.page{
+  flex:1;
+  min-height:0;
+  padding:20px;
+}
+
+/* =========================================================
+   CARDS / GRID
+   ========================================================= */
+.grid{
+  display:grid;
+  grid-template-columns: repeat(12, minmax(0,1fr));
+  gap:16px;
+}
+.card{
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: 0 8px 16px rgba(2,6,23,0.04);
+  padding:16px;
+}
+.card h3{ margin:0 0 10px; }
+.card-header{
+  display:flex; align-items:center; justify-content:space-between; gap:12px;
+  margin-bottom:12px;
+}
+
+/* =========================================================
+   INVENTORY TOOLBAR (sticky under topbar)
+   ========================================================= */
+.toolbar{
+  position: sticky;
+  top: var(--topbar-h);
+  z-index:55;
+  background:#fff;
+  margin: 0 0 12px;
+  padding:10px 16px;
+  border-bottom: 1px solid var(--line);
+  display:flex; align-items:center; gap:8px;
+}
+.spacer{ flex:1; }
+
+/* =========================================================
+   INPUTS / BUTTONS
+   ========================================================= */
+.input, .select{
+  width:100%;
+  border:1px solid var(--line);
+  border-radius:10px;
+  padding:10px 12px;
+  outline:none;
+  background:#fff;
+}
+.input:focus, .select:focus{
+  border-color:#c7d2fe;
+  box-shadow:0 0 0 3px rgba(59,130,246,.15);
+}
+
+.btn{
+  border:1px solid var(--line);
+  background:#fff;
+  color:var(--ink);
+  padding:8px 12px;
+  border-radius:10px;
+  font-weight:600;
+  cursor:pointer;
+}
+.btn:hover{ background:#fafafa; }
+.btn.primary{
+  background:var(--primary);
+  border-color:var(--primary);
+  color:#fff;
+}
+.btn.primary:hover{ background:var(--primary-600); }
+
+/* Purchase Orders: status select presentation */
+.select.po-status{
+  width:auto;
+  min-width:180px;
+  border-radius:999px;
+  font-weight:600;
+}
+.select.status-pending{
+  background:#fff7ed;            /* orange-50 */
+  color:#9a3412;                 /* orange-800 */
+  border-color:#f59e0b;          /* orange-500 */
+}
+.select.status-backorder{
+  background:#ecfdf5;            /* emerald-50 */
+  color:#047857;                 /* emerald-700 */
+  border-color:#34d399;          /* emerald-400 */
+}
+.select.status-received{
+  background:#065f46;            /* emerald-800 */
+  color:#ecfdf5;                 /* emerald-50 */
+  border-color:#065f46;
+}
+
+/* Segmented control (ribbon) */
+.segmented{
+  display:inline-flex; align-items:center; gap:8px;
+  padding:6px;
+  background:#fff;
+  border:1px solid var(--line);
+  border-radius:999px;
+  box-shadow:0 1px 2px rgba(0,0,0,.04);
+}
+[data-theme="dark"] .segmented{ background:#0b1220; }
+.segmented .seg{
+  appearance:none; border:1px solid #e5e7eb; background:#fff; color:#334155;
+  padding:8px 14px; border-radius:999px; font-weight:700; cursor:pointer;
+}
+.segmented .seg:hover{ background:#f8fafc; }
+.segmented .seg.active{
+  background:#111827; color:#fff; border-color:#111827;
+}
+[data-theme="dark"] .segmented .seg{ background:#0b1220; color:#cbd5e1; border-color:#334155; }
+[data-theme="dark"] .segmented .seg:hover{ background:#111827; }
+[data-theme="dark"] .segmented .seg.active{ background:#e5e7eb; color:#111827; border-color:#e5e7eb; }
+.btn-ghost{
+  background:transparent; border:none; color:var(--primary); padding:6px 8px; border-radius:8px; cursor:pointer;
+}
+.badge{
+  display:inline-block; padding:4px 10px; border-radius:999px; background:#eef2ff; color:#1e3a8a; font-weight:700;
+}
+
+/* =========================================================
+   TABLES
+   ========================================================= */
+.table-wrap{ overflow-y: visible; }                 /* vertical scroll is the main column */
+.table-nice thead{
+  position: sticky;
+  top: var(--sticky-offset);                        /* under topbar + toolbar */
+  z-index: 90;                                      /* above body rows */
+  background: #fff;
+}
+
+.table-nice thead th{
+  position: sticky;                                 /* Safari help */
+  top: 0;
+  background: #fff;
+  box-shadow: 0 1px 0 var(--line);
+}
+/* body rows stay below the header */
+.table-nice tbody{ position: relative; z-index: 1; }
+
+.table-nice{
+  width:100%;
+  border-collapse: separate;
+  border-spacing:0;
+}
+.table-nice thead th, .table-nice tbody td{
+  padding:14px 16px;
+  border-bottom:1px solid var(--line);
+}
+.table-nice thead th{
+  text-transform:uppercase; letter-spacing:.04em; font-size:12px; color:var(--muted);
+}
+
+/* Keep entire header row pinned under toolbar */
+.table-nice thead{
+  position: sticky;
+  top: var(--sticky-offset);
+  z-index:50;            /* below toolbar (55) */
+  background:#fff;
+}
+/* Safari helper */
+.table-nice thead th{ position: sticky; top:0; background:#fff; }
+
+/* Zebra + hover */
+.table-nice tbody tr:nth-child(odd){ background:#fafcff; }
+.table-nice tbody tr:hover{ background:#f3f6ff; }
+
+/* Numeric cells + pill */
+.td-num{ text-align:right; }
+.pill-count{
+  display:inline-block; min-width:34px; text-align:center;
+  padding:4px 10px; border-radius:999px; background:#eaf0ff;
+  color:#153e9b; font-weight:800;
+}
+
+/* Notes truncation */
+.note-td{ max-width:520px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+/* =========================================================
+   FORMS (Pallets etc.)
+   ========================================================= */
+.form-grid{
+  display:grid;
+  grid-template-columns: repeat(12, minmax(0,1fr));
+  gap:12px;
+}
+.field{ grid-column: span 3; }
+.field--wide{ grid-column: span 6; }
+.field--date{ grid-column: span 2; }
+.field--container{ grid-column: span 3; }
+.field--count{ grid-column: span 2; }
+.actions{ grid-column: span 12; display:flex; align-items:center; gap:8px; }
+.field label{ display:block; font-size:13px; color:var(--muted); margin:0 0 6px; }
+.qty-input{ width:120px; }
+
+/* =========================================================
+   MODAL
+   ========================================================= */
+.modal-backdrop{
+  position:fixed; inset:0; background:rgba(15,23,42,.32);
+  display:grid; place-items:center; z-index:1000;
+}
+.modal-card{
+  width:min(720px, 92vw);
+  background:#fff; border-radius:14px; border:1px solid var(--line);
+  box-shadow: 0 30px 80px rgba(2,6,23,.2);
+  overflow:hidden;
+}
+.modal-card header, .modal-card footer{
+  display:flex; align-items:center; justify-content:space-between; gap:10px;
+  padding:12px 14px; border-bottom:1px solid var(--line);
+}
+.modal-card footer{ border-top:1px solid var(--line); border-bottom:none; }
+.modal-card .body{ padding:14px; }
+.modal-card header .close{ all:unset; cursor:pointer; font-size:20px; padding:4px 8px; }
+
+/* =========================================================
+   HELPERS
+   ========================================================= */
+.hidden{ display:none !important; }
+.help{ color:var(--muted); }
+.muted{ color:var(--muted); }
+.mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; }
+.go{ color:var(--primary-700); text-decoration:none; font-weight:700; }
+.go:hover{ text-decoration:underline; }
+.col-actions{ text-align:right; }
+.footer{ color:#9aa3b2; font-size:12px; }
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+@media (max-width: 1024px){
+  :root{ --sidebar-w: 220px; } /* auto-shrink sidebar + main offset */
+  .brand .title, .brand .subtitle{ display:none; }
+  .field{ grid-column: span 6; }
+  .field--wide{ grid-column: span 12; }
+}
+@media (max-width: 640px){
+  :root{ --sidebar-w: 180px; }
+  .toolbar{ flex-wrap:wrap; row-gap:8px; }
+  .qty-input{ width:100%; }
+  .form-grid{ grid-template-columns: repeat(6, minmax(0,1fr)); }
+  .field{ grid-column: span 6; }
+  .field--date, .field--container, .field--count{ grid-column: span 6; }
+}
+
+/* ===== Pallet Monitoring table: center all columns ===== */
+#pm_table th,
+#pm_table td {
+  text-align: center !important;
+}
+
+#pm_table td.td-num {           /* overrides generic right-align */
+  text-align: center !important;
+}
+
+#pm_table td.note-td {          /* was left; center it */
+  text-align: center !important;
+}
+
+#pm_table .pm-col-actions,
+#pm_table td.pm-actions {
+  text-align: center !important;
+}
+
+/* (optional) make the blue count pill visually centered */
+#pm_table .pill-count {
+  display: inline-block;
+  margin: 0 auto;
+}
+/* Suppliers – certificates UI */
+.certs-inline{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.cert-pill{
+  display:inline-block;padding:4px 8px;border-radius:999px;
+  background:#eef5ff;font-weight:600;font-size:12px;text-decoration:none;
+}
+.certs-more{font-size:12px}
+
+/* Modal list of certificates */
+.certs-scroll{max-height:60vh;overflow-y:auto}
+.cert-row{display:flex;align-items:center;justify-content:space-between;
+  padding:8px 0;border-bottom:1px solid #eef1f6}
+.cert-title{font-weight:600}
+
+/* OPTIONAL: if you want the cell itself to scroll instead of a modal */
+.certs-cell{max-height:70px;overflow-y:auto}
+
+/* Reorder visuals */
+.pill-count.low{
+  background:#ffe5e5;
+  color:#9b1c1c;
+}
+.badge-reorder{
+  display:inline-block;
+  margin-left:6px;
+  padding:2px 8px;
+  border-radius:999px;
+  background:#fff4e5;
+  color:#974a0a;
+  font-weight:700;
+  font-size:12px;
+}
+
+
+/* Use Form modal: make table header stick right under the modal toolbar */
+#uf_table thead{
+  top: 0 !important;
+  z-index: 95;
+}
+
+
+
+/* Make all modals internally scrollable with fixed header/footer */
+.modal-card{
+  max-height:92vh;
+  display:flex;
+  flex-direction:column;
+}
+.modal-card header{
+  position: sticky;
+  top: 0;
+  background:#fff;
+  z-index: 96;
+}
+.modal-card footer{
+  position: sticky;
+  bottom: 0;
+  background:#fff;
+  z-index: 96;
+}
+.modal-card .body{
+  flex:1;
+  overflow:auto;
+}
+
+
+/* In modals, table headers should pin to the top of the scrollable body */
+.modal-card .table-nice thead{
+  top: 0 !important;
+  z-index: 95;
+}
+
+
+/* Use Form modal toolbar (sticky under modal header) */
+.uf-modal .uf-toolbar{
+  position: sticky;
+  top: 0;               /* sticks just below modal header */
+  z-index: 96;
+  background:#fff;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:0 0 8px 0;
+  border-bottom:1px solid var(--line);
+}
+.uf-modal .uf-toolbar #uf_search{ flex:1; min-width:220px; }
+.uf-modal .uf-toolbar #uf_note{ flex:1; min-width:220px; }
+.uf-modal .uf-toolbar #uf_submit{ white-space:nowrap; }
+
+/* Position Use Form table header below the toolbar */
+.uf-modal .table-nice thead{
+  top: 52px !important; /* ~toolbar height */
+  z-index: 95;
+}
+
+
+/* Saved Forms tiles on Home */
+.forms-grid{
+  display:grid;
+  grid-template-columns: repeat(12, minmax(0,1fr));
+  gap:16px;
+}
+@media (max-width: 1280px){
+  .forms-grid{ grid-template-columns: repeat(8, minmax(0,1fr)); }
+}
+@media (max-width: 860px){
+  .forms-grid{ grid-template-columns: repeat(4, minmax(0,1fr)); }
+}
+.form-card{
+  grid-column: span 3;
+  padding:14px;
+}
+@media (max-width: 1280px){
+  .form-card{ grid-column: span 4; }
+}
+@media (max-width: 860px){
+  .form-card{ grid-column: span 4; }
+}
