@@ -150,15 +150,38 @@ export function UseFormDialog({ isOpen, onClose, form, onSuccess }: UseFormDialo
     }
   }
 
-  const handleDragEnd = (event: DragEndEvent) => {
+  const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event
 
     if (over && active.id !== over.id) {
       setProducts((items) => {
         const oldIndex = items.findIndex((item) => item.id === active.id)
         const newIndex = items.findIndex((item) => item.id === over.id)
-        return arrayMove(items, oldIndex, newIndex)
+        const newOrder = arrayMove(items, oldIndex, newIndex)
+
+        // Save new order to database
+        saveProductOrder(newOrder.map(p => p.id))
+
+        return newOrder
       })
+    }
+  }
+
+  const saveProductOrder = async (newItemIds: string[]) => {
+    if (!form) return
+
+    try {
+      const { error } = await supabase
+        .from('order_forms')
+        .update({ item_ids: newItemIds })
+        .eq('id', form.id)
+
+      if (error) throw error
+
+      toast.success('Product order saved', { duration: 2000 })
+    } catch (error) {
+      console.error('Error saving product order:', error)
+      toast.error('Failed to save product order')
     }
   }
 
