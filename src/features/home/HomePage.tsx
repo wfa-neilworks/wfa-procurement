@@ -1,36 +1,216 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card'
+import { useState, useEffect } from 'react'
+import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card'
 import { Button } from '../../components/ui/button'
-import { Plus } from 'lucide-react'
+import { Input } from '../../components/ui/input'
+import { Textarea } from '../../components/ui/textarea'
+import { Plus, X, AlertTriangle, Package } from 'lucide-react'
+import { supabase } from '../../lib/supabase'
+import { toast } from 'sonner'
+import type { Database } from '../../types/database'
+
+type Product = Database['public']['Tables']['products']['Row']
+
+interface TodoItem {
+  id: string
+  text: string
+  completed: boolean
+}
 
 export function HomePage() {
+  const [lowStockProducts, setLowStockProducts] = useState<Product[]>([])
+  const [todos, setTodos] = useState<TodoItem[]>(() => {
+    const saved = localStorage.getItem('homeTodos')
+    return saved ? JSON.parse(saved) : []
+  })
+  const [newTodo, setNewTodo] = useState('')
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetchLowStockProducts()
+  }, [])
+
+  useEffect(() => {
+    localStorage.setItem('homeTodos', JSON.stringify(todos))
+  }, [todos])
+
+  const fetchLowStockProducts = async () => {
+    try {
+      setLoading(true)
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .lte('soh', 10) // Products with stock on hand <= 10
+        .order('soh', { ascending: true })
+
+      if (error) throw error
+      setLowStockProducts(data || [])
+    } catch (error) {
+      console.error('Error fetching low stock products:', error)
+      toast.error('Failed to load low stock products')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const addTodo = () => {
+    if (!newTodo.trim()) return
+
+    const newTodoItem: TodoItem = {
+      id: Date.now().toString(),
+      text: newTodo,
+      completed: false,
+    }
+
+    setTodos([...todos, newTodoItem])
+    setNewTodo('')
+  }
+
+  const toggleTodo = (id: string) => {
+    setTodos(todos.map(todo =>
+      todo.id === id ? { ...todo, completed: !todo.completed } : todo
+    ))
+  }
+
+  const deleteTodo = (id: string) => {
+    setTodos(todos.filter(todo => todo.id !== id))
+  }
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      addTodo()
+    }
+  }
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Saved Forms</h1>
-          <p className="text-muted-foreground">
-            Manage your saved deduction forms
-          </p>
-        </div>
-        <Button>
-          <Plus className="mr-2 h-4 w-4" />
-          Create Form
-        </Button>
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+        <p className="text-muted-foreground">
+          Manage your inventory and tasks
+        </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {/* TODO: Implement saved forms list */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Coming Soon</CardTitle>
-            <CardDescription>
-              Saved forms feature will be implemented here
-            </CardDescription>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Low Stock Products - Left Side */}
+        <Card className="h-fit">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-orange-500" />
+                <CardTitle>Low Stock Alert</CardTitle>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={fetchLowStockProducts}
+              >
+                Refresh
+              </Button>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Products that need reordering (stock ≤ 10)
+            </p>
           </CardHeader>
           <CardContent>
+            {loading ? (
+              <div className="text-center py-8 text-muted-foreground">
+                Loading...
+              </div>
+            ) : lowStockProducts.length === 0 ? (
+              <div className="text-center py-8">
+                <Package className="h-12 w-12 text-muted-foreground mx-auto mb-2" />
+                <p className="text-muted-foreground">All stock levels are healthy</p>
+              </div>
+            ) : (
+              <div className="space-y-2 max-h-[600px] overflow-y-auto">
+                {lowStockProducts.map((product) => (
+                  <div
+                    key={product.id}
+                    className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium truncate">{product.code}</div>
+                      <div className="text-sm text-muted-foreground truncate">
+                        {product.description}
+                      </div>
+                    </div>
+                    <div className="ml-4 flex items-center gap-2">
+                      <div className={`text-lg font-bold px-3 py-1 rounded ${
+                        product.soh === 0
+                          ? 'bg-red-100 text-red-700'
+                          : product.soh <= 5
+                          ? 'bg-orange-100 text-orange-700'
+                          : 'bg-yellow-100 text-yellow-700'
+                      }`}>
+                        {product.soh}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* To-Do List / Notepad - Right Side */}
+        <Card className="h-fit">
+          <CardHeader className="pb-3">
+            <CardTitle>To-Do List</CardTitle>
             <p className="text-sm text-muted-foreground">
-              This page will display your saved deduction forms with options to open, edit, and delete them.
+              Keep track of your tasks and notes
             </p>
+          </CardHeader>
+          <CardContent>
+            {/* Add New Todo */}
+            <div className="flex gap-2 mb-4">
+              <Input
+                placeholder="Add a new task..."
+                value={newTodo}
+                onChange={(e) => setNewTodo(e.target.value)}
+                onKeyPress={handleKeyPress}
+              />
+              <Button onClick={addTodo} size="sm">
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
+
+            {/* Todo List */}
+            <div className="space-y-2 max-h-[600px] overflow-y-auto">
+              {todos.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  No tasks yet. Add one to get started!
+                </div>
+              ) : (
+                todos.map((todo) => (
+                  <div
+                    key={todo.id}
+                    className="flex items-start gap-3 p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors group"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={todo.completed}
+                      onChange={() => toggleTodo(todo.id)}
+                      className="mt-1 h-4 w-4 rounded border-gray-300 cursor-pointer"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className={`break-words ${
+                        todo.completed
+                          ? 'line-through text-muted-foreground'
+                          : 'text-foreground'
+                      }`}>
+                        {todo.text}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => deleteTodo(todo.id)}
+                      className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
           </CardContent>
         </Card>
       </div>
