@@ -3,7 +3,7 @@ import { Sidebar } from './Sidebar'
 import { useAuth } from '../../hooks/useAuth'
 import { Button } from '../ui/button'
 import { LogIn, LogOut, User } from 'lucide-react'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   Dialog,
   DialogContent,
@@ -20,6 +20,19 @@ export function Layout() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    const saved = localStorage.getItem('sidebarCollapsed')
+    return saved === 'true'
+  })
+
+  // Persist sidebar state
+  useEffect(() => {
+    localStorage.setItem('sidebarCollapsed', sidebarCollapsed.toString())
+  }, [sidebarCollapsed])
+
+  const handleSidebarToggle = () => {
+    setSidebarCollapsed(!sidebarCollapsed)
+  }
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -36,9 +49,9 @@ export function Layout() {
 
   return (
     <div className="flex h-screen bg-background">
-      <Sidebar />
+      <Sidebar isCollapsed={sidebarCollapsed} onToggle={handleSidebarToggle} />
 
-      <div className="flex-1 ml-64 flex flex-col">
+      <div className={`flex-1 flex flex-col transition-all duration-300 ${sidebarCollapsed ? 'ml-16' : 'ml-64'}`}>
         {/* Top bar */}
         <header className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
           <div className="flex h-14 items-center justify-between px-6">
