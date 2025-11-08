@@ -1,0 +1,61 @@
+@import "tailwindcss";
+
+:root {
+  /* Custom color palette */
+  --background: 0 0% 98%;
+  --foreground: 197 24% 19%; /* #28363D */
+  --card: 0 0% 100%;
+  --card-foreground: 197 24% 19%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 197 24% 19%;
+  --primary: 189 28% 52%; /* #6D9197 */
+  --primary-foreground: 0 0% 100%;
+  --secondary: 162 23% 67%; /* #99AEAD */
+  --secondary-foreground: 197 24% 19%;
+  --muted: 180 17% 87%; /* #C4CDC1 */
+  --muted-foreground: 189 21% 44%;
+  --accent: 189 28% 52%;
+  --accent-foreground: 0 0% 100%;
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 180 17% 87%;
+  --input: 180 17% 87%;
+  --ring: 189 28% 52%;
+  --radius: 0.5rem;
+
+  /* Sidebar specific */
+  --sidebar-bg: 197 24% 19%; /* #28363D - darkest */
+  --sidebar-accent: 189 32% 40%; /* #2F575D - second darkest */
+}
+
+.dark {
+  --background: 210 50% 10%;
+  --foreground: 210 40% 98%;
+  --card: 210 40% 12%;
+  --card-foreground: 210 40% 98%;
+  --popover: 210 40% 12%;
+  --popover-foreground: 210 40% 98%;
+  --primary: 210 100% 55%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 210 40% 18%;
+  --secondary-foreground: 210 40% 98%;
+  --muted: 210 40% 18%;
+  --muted-foreground: 210 30% 65%;
+  --accent: 210 40% 20%;
+  --accent-foreground: 210 40% 98%;
+  --destructive: 0 62.8% 50%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 210 40% 20%;
+  --input: 210 40% 20%;
+  --ring: 210 100% 55%;
+}
+
+* {
+  border-color: hsl(var(--border));
+}
+
+body {
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
