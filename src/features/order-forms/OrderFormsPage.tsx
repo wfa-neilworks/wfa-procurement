@@ -12,14 +12,6 @@ import {
   DialogTitle,
   DialogFooter,
 } from '../../components/ui/dialog'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '../../components/ui/table'
 import type { Database } from '../../types/database'
 import { UseFormDialog } from './UseFormDialog'
 
@@ -280,76 +272,76 @@ export function OrderFormsPage() {
         </div>
       </div>
 
-      <Card>
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Form Title</TableHead>
-                <TableHead>Products</TableHead>
-                <TableHead>Created</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {loading ? (
-                <TableRow>
-                  <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
-                    Loading...
-                  </TableCell>
-                </TableRow>
-              ) : filteredForms.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
-                    {searchTerm ? 'No forms found' : 'No forms created yet'}
-                  </TableCell>
-                </TableRow>
-              ) : (
-                filteredForms.map((form) => (
-                  <TableRow key={form.id}>
-                    <TableCell className="font-medium">{form.title}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1 text-muted-foreground">
-                        <Package className="h-4 w-4" />
-                        {form.item_ids.length} product{form.item_ids.length !== 1 ? 's' : ''}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {formatDate(form.created_at)}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleOpenUseFormDialog(form)}
-                        >
-                          <FileCheck className="h-4 w-4 mr-1" />
-                          Use Form
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleOpenDialog(form)}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDelete(form.id, form.title)}
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+      {loading ? (
+        <div className="text-center py-12 text-muted-foreground">
+          Loading...
         </div>
-      </Card>
+      ) : filteredForms.length === 0 ? (
+        <Card className="p-12 text-center">
+          <p className="text-muted-foreground">
+            {searchTerm ? 'No forms found' : 'No forms created yet'}
+          </p>
+        </Card>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {filteredForms.map((form) => (
+            <Card key={form.id} className="p-6 hover:shadow-lg transition-shadow">
+              <div className="space-y-4">
+                {/* Form Title */}
+                <div>
+                  <h3 className="font-semibold text-lg line-clamp-2">{form.title}</h3>
+                </div>
+
+                {/* Stats */}
+                <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                  <div className="flex items-center gap-1">
+                    <Package className="h-4 w-4" />
+                    <span>{form.item_ids.length} product{form.item_ids.length !== 1 ? 's' : ''}</span>
+                  </div>
+                </div>
+
+                {/* Date */}
+                <div className="text-xs text-muted-foreground">
+                  Created {formatDate(form.created_at)}
+                </div>
+
+                {/* Actions */}
+                <div className="flex flex-col gap-2 pt-2 border-t">
+                  <Button
+                    variant="default"
+                    size="sm"
+                    onClick={() => handleOpenUseFormDialog(form)}
+                    className="w-full"
+                  >
+                    <FileCheck className="h-4 w-4 mr-2" />
+                    Use Form
+                  </Button>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleOpenDialog(form)}
+                      className="flex-1"
+                    >
+                      <Pencil className="h-4 w-4 mr-1" />
+                      Edit
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDelete(form.id, form.title)}
+                      className="flex-1"
+                    >
+                      <Trash2 className="h-4 w-4 text-destructive mr-1" />
+                      Delete
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </Card>
+          ))}
+        </div>
+      )}
 
       {/* Create/Edit Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
