@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import { Plus, Pencil, Trash2, Search, TrendingUp, TrendingDown, Package } from 'lucide-react'
+import { toast } from 'sonner'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../hooks/useAuth'
 import { Button } from '../../components/ui/button'
@@ -102,7 +103,7 @@ export function InventoryPage() {
       setProducts(data || [])
     } catch (error) {
       console.error('Error fetching products:', error)
-      alert('Failed to load products')
+      toast.error('Failed to load products')
     } finally {
       setLoading(false)
     }
@@ -145,7 +146,7 @@ export function InventoryPage() {
     e.preventDefault()
 
     if (!productForm.code || !productForm.description) {
-      alert('Please fill in all required fields')
+      toast.error('Please fill in all required fields')
       return
     }
 
@@ -166,6 +167,7 @@ export function InventoryPage() {
           .eq('id', editingProduct.id)
 
         if (error) throw error
+        toast.success(`Product "${productForm.code}" updated successfully`)
       } else {
         // Create new product
         const insertData: ProductInsert = {
@@ -183,6 +185,7 @@ export function InventoryPage() {
           .insert(insertData)
 
         if (error) throw error
+        toast.success(`Product "${productForm.code}" added successfully`)
       }
 
       setIsProductDialogOpen(false)
@@ -190,9 +193,9 @@ export function InventoryPage() {
     } catch (error: any) {
       console.error('Error saving product:', error)
       if (error.code === '23505') {
-        alert('Product code already exists')
+        toast.error('Product code already exists')
       } else {
-        alert('Failed to save product')
+        toast.error('Failed to save product')
       }
     }
   }
@@ -201,13 +204,13 @@ export function InventoryPage() {
     e.preventDefault()
 
     if (!selectedProduct || !stockForm.quantity) {
-      alert('Please enter a quantity')
+      toast.error('Please enter a quantity')
       return
     }
 
     const quantity = parseInt(stockForm.quantity)
     if (isNaN(quantity) || quantity <= 0) {
-      alert('Quantity must be a positive number')
+      toast.error('Quantity must be a positive number')
       return
     }
 
@@ -216,7 +219,7 @@ export function InventoryPage() {
       const newSOH = selectedProduct.soh + delta
 
       if (newSOH < 0) {
-        alert('Cannot deduct more than current stock')
+        toast.error('Cannot deduct more than current stock')
         return
       }
 
@@ -243,11 +246,16 @@ export function InventoryPage() {
 
       if (movementError) throw movementError
 
+      toast.success(
+        `Successfully ${stockForm.type === 'add' ? 'added' : 'deducted'} ${quantity} units ${stockForm.type === 'add' ? 'to' : 'from'} ${selectedProduct.code}`,
+        { description: `New stock level: ${newSOH}` }
+      )
+
       setIsStockDialogOpen(false)
       fetchProducts()
     } catch (error) {
       console.error('Error updating stock:', error)
-      alert('Failed to update stock')
+      toast.error('Failed to update stock')
     }
   }
 
@@ -263,10 +271,11 @@ export function InventoryPage() {
         .eq('id', id)
 
       if (error) throw error
+      toast.success(`Product "${code}" deleted successfully`)
       fetchProducts()
     } catch (error) {
       console.error('Error deleting product:', error)
-      alert('Failed to delete product')
+      toast.error('Failed to delete product')
     }
   }
 

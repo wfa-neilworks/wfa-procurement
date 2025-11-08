@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Plus, Pencil, Trash2, Search, FileCheck, Package, ChevronDown, ChevronRight } from 'lucide-react'
+import { toast } from 'sonner'
 import { supabase } from '../../lib/supabase'
 import { Button } from '../../components/ui/button'
 import { Input } from '../../components/ui/input'
@@ -90,7 +91,7 @@ export function OrderFormsPage() {
       setOrderForms(data || [])
     } catch (error) {
       console.error('Error fetching order forms:', error)
-      alert('Failed to load order forms')
+      toast.error('Failed to load order forms')
     } finally {
       setLoading(false)
     }
@@ -168,7 +169,7 @@ export function OrderFormsPage() {
     e.preventDefault()
 
     if (!formData.title) {
-      alert('Please enter a form title')
+      toast.error('Please enter a form title')
       return
     }
 
@@ -177,7 +178,7 @@ export function OrderFormsPage() {
       .map((p) => p.id)
 
     if (selectedIds.length === 0) {
-      alert('Please select at least one product')
+      toast.error('Please select at least one product')
       return
     }
 
@@ -194,6 +195,7 @@ export function OrderFormsPage() {
           .eq('id', editingForm.id)
 
         if (error) throw error
+        toast.success(`Successfully updated form "${formData.title}"`)
       } else {
         const insertData: OrderFormInsert = {
           title: formData.title,
@@ -203,13 +205,14 @@ export function OrderFormsPage() {
         const { error } = await supabase.from('order_forms').insert(insertData)
 
         if (error) throw error
+        toast.success(`Successfully created form "${formData.title}"`)
       }
 
       handleCloseDialog()
       fetchOrderForms()
     } catch (error) {
       console.error('Error saving order form:', error)
-      alert('Failed to save order form')
+      toast.error('Failed to save order form')
     }
   }
 
@@ -222,10 +225,11 @@ export function OrderFormsPage() {
       const { error } = await supabase.from('order_forms').delete().eq('id', id)
 
       if (error) throw error
+      toast.success(`Successfully deleted form "${title}"`)
       fetchOrderForms()
     } catch (error) {
       console.error('Error deleting order form:', error)
-      alert('Failed to delete order form')
+      toast.error('Failed to delete order form')
     }
   }
 
@@ -259,14 +263,14 @@ export function OrderFormsPage() {
     const itemsToDeduct = useFormProducts.filter((p) => p.deductQty > 0)
 
     if (itemsToDeduct.length === 0) {
-      alert('Please enter quantities to deduct')
+      toast.error('Please enter quantities to deduct')
       return
     }
 
     // Validate stock levels
     for (const item of itemsToDeduct) {
       if (item.deductQty > item.soh) {
-        alert(
+        toast.error(
           `Cannot deduct ${item.deductQty} from "${item.description}" - only ${item.soh} in stock`
         )
         return
@@ -302,13 +306,13 @@ export function OrderFormsPage() {
         if (movementError) throw movementError
       }
 
-      alert('Stock deducted successfully')
+      toast.success(`Successfully deducted stock using form "${usingForm?.title}"`)
       handleCloseUseFormDialog()
       // Refresh products if needed
       fetchProducts()
     } catch (error) {
       console.error('Error applying form:', error)
-      alert('Failed to apply deductions')
+      toast.error('Failed to apply deductions')
     }
   }
 

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Plus, Pencil, Trash2, Search, Mail, Phone, FileCheck } from 'lucide-react'
+import { toast } from 'sonner'
 import { supabase } from '../../lib/supabase'
 import { Button } from '../../components/ui/button'
 import { Input } from '../../components/ui/input'
@@ -71,7 +72,7 @@ export function SuppliersPage() {
       setSuppliers(data || [])
     } catch (error) {
       console.error('Error fetching suppliers:', error)
-      alert('Failed to load suppliers')
+      toast.error('Failed to load suppliers')
     } finally {
       setLoading(false)
     }
@@ -107,7 +108,7 @@ export function SuppliersPage() {
     e.preventDefault()
 
     if (!formData.name) {
-      alert('Please enter supplier name')
+      toast.error('Please enter supplier name')
       return
     }
 
@@ -126,6 +127,7 @@ export function SuppliersPage() {
           .eq('id', editingSupplier.id)
 
         if (error) throw error
+        toast.success(`Successfully updated supplier "${formData.name}"`)
       } else {
         const insertData: SupplierInsert = {
           name: formData.name,
@@ -139,13 +141,14 @@ export function SuppliersPage() {
           .insert(insertData)
 
         if (error) throw error
+        toast.success(`Successfully added supplier "${formData.name}"`)
       }
 
       handleCloseDialog()
       fetchSuppliers()
     } catch (error) {
       console.error('Error saving supplier:', error)
-      alert('Failed to save supplier')
+      toast.error('Failed to save supplier')
     }
   }
 
@@ -161,10 +164,11 @@ export function SuppliersPage() {
         .eq('id', id)
 
       if (error) throw error
+      toast.success(`Successfully deleted supplier "${name}"`)
       fetchSuppliers()
     } catch (error) {
       console.error('Error deleting supplier:', error)
-      alert('Failed to delete supplier')
+      toast.error('Failed to delete supplier')
     }
   }
 

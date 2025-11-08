@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Plus, Pencil, Trash2, Search } from 'lucide-react'
+import { toast } from 'sonner'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../hooks/useAuth'
 import { Button } from '../../components/ui/button'
@@ -81,7 +82,7 @@ export function PalletsPage() {
       setPallets(data || [])
     } catch (error) {
       console.error('Error fetching pallets:', error)
-      alert('Failed to load pallet data')
+      toast.error('Failed to load pallet data')
     } finally {
       setLoading(false)
     }
@@ -117,13 +118,13 @@ export function PalletsPage() {
     e.preventDefault()
 
     if (!formData.container || !formData.date || !formData.count) {
-      alert('Please fill in all required fields')
+      toast.error('Please fill in all required fields')
       return
     }
 
     const count = parseInt(formData.count)
     if (isNaN(count) || count <= 0) {
-      alert('Count must be a positive number')
+      toast.error('Count must be a positive number')
       return
     }
 
@@ -141,6 +142,7 @@ export function PalletsPage() {
           .eq('id', editingPallet.id)
 
         if (error) throw error
+        toast.success(`Successfully updated pallet unload for ${formData.container}`)
       } else {
         // Create new pallet
         const { error } = await supabase
@@ -154,13 +156,14 @@ export function PalletsPage() {
           })
 
         if (error) throw error
+        toast.success(`Successfully added pallet unload for ${formData.container}`)
       }
 
       handleCloseDialog()
       fetchPallets()
     } catch (error) {
       console.error('Error saving pallet:', error)
-      alert('Failed to save pallet data')
+      toast.error('Failed to save pallet data')
     }
   }
 
@@ -176,10 +179,11 @@ export function PalletsPage() {
         .eq('id', id)
 
       if (error) throw error
+      toast.success('Successfully deleted pallet unload record')
       fetchPallets()
     } catch (error) {
       console.error('Error deleting pallet:', error)
-      alert('Failed to delete pallet record')
+      toast.error('Failed to delete pallet record')
     }
   }
 

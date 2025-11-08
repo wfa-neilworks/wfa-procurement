@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
+import { Toaster } from 'sonner'
 import { AuthProvider } from './hooks/useAuth'
 import { Layout } from './components/layout/Layout'
 
@@ -44,6 +45,13 @@ function App() {
           </Routes>
         </BrowserRouter>
       </AuthProvider>
+      <Toaster
+        position="top-right"
+        expand={true}
+        richColors
+        closeButton
+        duration={4000}
+      />
       <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>
   )

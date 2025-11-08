@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Plus, Pencil, Trash2, Search, FileText, ExternalLink } from 'lucide-react'
+import { toast } from 'sonner'
 import { supabase } from '../../lib/supabase'
 import { Button } from '../../components/ui/button'
 import { Input } from '../../components/ui/input'
@@ -73,7 +74,7 @@ export function SDSPage() {
       setChemicals(data || [])
     } catch (error) {
       console.error('Error fetching chemicals:', error)
-      alert('Failed to load SDS chemicals')
+      toast.error('Failed to load SDS chemicals')
     } finally {
       setLoading(false)
     }
@@ -107,7 +108,7 @@ export function SDSPage() {
     e.preventDefault()
 
     if (!formData.name || !formData.location) {
-      alert('Please fill in all required fields')
+      toast.error('Please fill in all required fields')
       return
     }
 
@@ -126,6 +127,7 @@ export function SDSPage() {
           .eq('id', editingChemical.id)
 
         if (error) throw error
+        toast.success(`Successfully updated chemical "${formData.name}"`)
       } else {
         // Create new chemical
         const insertData: SDSChemicalInsert = {
@@ -139,13 +141,14 @@ export function SDSPage() {
           .insert(insertData)
 
         if (error) throw error
+        toast.success(`Successfully added chemical "${formData.name}"`)
       }
 
       handleCloseDialog()
       fetchChemicals()
     } catch (error) {
       console.error('Error saving chemical:', error)
-      alert('Failed to save chemical')
+      toast.error('Failed to save chemical')
     }
   }
 
@@ -161,10 +164,11 @@ export function SDSPage() {
         .eq('id', id)
 
       if (error) throw error
+      toast.success(`Successfully deleted chemical "${name}"`)
       fetchChemicals()
     } catch (error) {
       console.error('Error deleting chemical:', error)
-      alert('Failed to delete chemical')
+      toast.error('Failed to delete chemical')
     }
   }
 
