@@ -21,12 +21,12 @@ import {
   TableRow,
 } from '../../components/ui/table'
 import type { Database } from '../../types/database'
+import { UseFormDialog } from './UseFormDialog'
 
 type OrderForm = Database['public']['Tables']['order_forms']['Row']
 type OrderFormInsert = Database['public']['Tables']['order_forms']['Insert']
 type OrderFormUpdate = Database['public']['Tables']['order_forms']['Update']
 type Product = Database['public']['Tables']['products']['Row']
-type StockMovementInsert = Database['public']['Tables']['stock_movements']['Insert']
 
 interface ProductWithSelected extends Product {
   selected: boolean
@@ -60,7 +60,6 @@ export function OrderFormsPage() {
   })
 
   const [productsWithSelection, setProductsWithSelection] = useState<ProductWithSelected[]>([])
-  const [useFormProducts, setUseFormProducts] = useState<ProductWithSelected[]>([])
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set())
 
   useEffect(() => {
@@ -235,85 +234,12 @@ export function OrderFormsPage() {
 
   const handleOpenUseFormDialog = (form: OrderForm) => {
     setUsingForm(form)
-    // Get products that are in this form
-    const formProducts = products
-      .filter((p) => form.item_ids.includes(p.id))
-      .map((p) => ({
-        ...p,
-        selected: true,
-        deductQty: 0,
-      }))
-    setUseFormProducts(formProducts)
     setIsUseFormDialogOpen(true)
   }
 
   const handleCloseUseFormDialog = () => {
     setIsUseFormDialogOpen(false)
     setUsingForm(null)
-    setUseFormProducts([])
-  }
-
-  const updateDeductQty = (productId: string, qty: number) => {
-    setUseFormProducts((prev) =>
-      prev.map((p) => (p.id === productId ? { ...p, deductQty: qty } : p))
-    )
-  }
-
-  const handleApplyForm = async () => {
-    const itemsToDeduct = useFormProducts.filter((p) => p.deductQty > 0)
-
-    if (itemsToDeduct.length === 0) {
-      toast.error('Please enter quantities to deduct')
-      return
-    }
-
-    // Validate stock levels
-    for (const item of itemsToDeduct) {
-      if (item.deductQty > item.soh) {
-        toast.error(
-          `Cannot deduct ${item.deductQty} from "${item.description}" - only ${item.soh} in stock`
-        )
-        return
-      }
-    }
-
-    try {
-      // Process each deduction
-      for (const item of itemsToDeduct) {
-        // Update product SOH
-        const newSoh = item.soh - item.deductQty
-        const { error: updateError } = await supabase
-          .from('products')
-          .update({
-            soh: newSoh,
-            total_out: item.total_out + item.deductQty,
-          })
-          .eq('id', item.id)
-
-        if (updateError) throw updateError
-
-        // Log stock movement
-        const movement: StockMovementInsert = {
-          product_id: item.id,
-          qty_delta: -item.deductQty,
-          note: `Deducted using form: ${usingForm?.title}`,
-        }
-
-        const { error: movementError } = await supabase
-          .from('stock_movements')
-          .insert(movement)
-
-        if (movementError) throw movementError
-      }
-
-      toast.success(`Successfully deducted stock using form "${usingForm?.title}"`)
-      handleCloseUseFormDialog()
-      // Refresh products if needed
-      fetchProducts()
-    } catch (error) {
-      console.error('Error applying form:', error)
-      toast.error('Failed to apply deductions')
-    }
   }
 
   const formatDate = (dateString: string) => {
@@ -525,53 +451,12 @@ export function OrderFormsPage() {
       </Dialog>
 
       {/* Use Form Dialog */}
-      <Dialog open={isUseFormDialogOpen} onOpenChange={setIsUseFormDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Use Form: {usingForm?.title}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              Enter quantities to deduct for each product:
-            </p>
-            <div className="border rounded-md max-h-[400px] overflow-y-auto">
-              <div className="divide-y">
-                {useFormProducts.map((product) => (
-                  <div key={product.id} className="p-3 space-y-2">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="font-medium">{product.code}</div>
-                        <div className="text-sm text-muted-foreground">
-                          {product.description}
-                        </div>
-                      </div>
-                      <div className="text-sm text-muted-foreground">
-                        SOH: {product.soh}
-                      </div>
-                    </div>
-                    <Input
-                      type="number"
-                      min="0"
-                      max={product.soh}
-                      value={product.deductQty || ''}
-                      onChange={(e) =>
-                        updateDeductQty(product.id, parseInt(e.target.value) || 0)
-                      }
-                      placeholder="Quantity to deduct"
-                    />
-                  </div>
-                ))}
-              </div>
-            </div>
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={handleCloseUseFormDialog}>
-                Cancel
-              </Button>
-              <Button onClick={handleApplyForm}>Apply Deductions</Button>
-            </DialogFooter>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <UseFormDialog
+        isOpen={isUseFormDialogOpen}
+        onClose={handleCloseUseFormDialog}
+        form={usingForm}
+        onSuccess={fetchOrderForms}
+      />
     </div>
   )
 }
