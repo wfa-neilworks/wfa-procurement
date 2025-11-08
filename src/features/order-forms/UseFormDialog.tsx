@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { X, GripVertical } from 'lucide-react'
+import { X, GripVertical, Columns3, Columns2, Grid3x3 } from 'lucide-react'
 import { toast } from 'sonner'
 import {
   DndContext,
@@ -126,8 +126,17 @@ export function UseFormDialog({ isOpen, onClose, form, onSuccess }: UseFormDialo
   const [products, setProducts] = useState<ProductWithQuantity[]>([])
   const [loading, setLoading] = useState(false)
   const [applying, setApplying] = useState(false)
+  const [columns, setColumns] = useState<number>(() => {
+    const saved = localStorage.getItem('useFormColumns')
+    return saved ? parseInt(saved) : 3
+  })
   const firstInputRef = useRef<HTMLInputElement>(null)
   const inputRefs = useRef<Map<string, HTMLInputElement>>(new Map())
+
+  // Persist column preference
+  useEffect(() => {
+    localStorage.setItem('useFormColumns', columns.toString())
+  }, [columns])
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -297,9 +306,47 @@ export function UseFormDialog({ isOpen, onClose, form, onSuccess }: UseFormDialo
               Enter quantities to deduct for each product
             </p>
           </div>
-          <Button variant="ghost" size="sm" onClick={onClose}>
-            <X className="h-5 w-5" />
-          </Button>
+          <div className="flex items-center gap-3">
+            {/* Column Selector */}
+            <div className="flex items-center gap-2 border rounded-lg p-1 bg-gray-50">
+              <button
+                onClick={() => setColumns(2)}
+                className={`p-2 rounded transition-colors ${
+                  columns === 2
+                    ? 'bg-blue-500 text-white'
+                    : 'text-gray-600 hover:bg-gray-200'
+                }`}
+                title="2 columns"
+              >
+                <Columns2 className="h-4 w-4" />
+              </button>
+              <button
+                onClick={() => setColumns(3)}
+                className={`p-2 rounded transition-colors ${
+                  columns === 3
+                    ? 'bg-blue-500 text-white'
+                    : 'text-gray-600 hover:bg-gray-200'
+                }`}
+                title="3 columns"
+              >
+                <Columns3 className="h-4 w-4" />
+              </button>
+              <button
+                onClick={() => setColumns(4)}
+                className={`p-2 rounded transition-colors ${
+                  columns === 4
+                    ? 'bg-blue-500 text-white'
+                    : 'text-gray-600 hover:bg-gray-200'
+                }`}
+                title="4 columns"
+              >
+                <Grid3x3 className="h-4 w-4" />
+              </button>
+            </div>
+            <Button variant="ghost" size="sm" onClick={onClose}>
+              <X className="h-5 w-5" />
+            </Button>
+          </div>
         </div>
 
         {/* Content */}
@@ -318,7 +365,11 @@ export function UseFormDialog({ isOpen, onClose, form, onSuccess }: UseFormDialo
                 items={products.map(p => p.id)}
                 strategy={verticalListSortingStrategy}
               >
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className={`grid gap-4 ${
+                  columns === 2 ? 'grid-cols-1 md:grid-cols-2' :
+                  columns === 3 ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' :
+                  'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
+                }`}>
                   {products.map((product, index) => (
                     <SortableProductCard
                       key={product.id}
