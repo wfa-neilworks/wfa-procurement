@@ -38,17 +38,39 @@ export function HomePage() {
       const { data, error } = await supabase
         .from('products')
         .select('*')
-        .lte('soh', 10) // Products with stock on hand <= 10
+        .not('min_stock', 'is', null) // Only products with min_stock set
         .order('soh', { ascending: true })
 
       if (error) throw error
-      setLowStockProducts(data || [])
+
+      // Filter products where SOH <= 120% of min_stock
+      const filtered = (data || []).filter(product => {
+        if (!product.min_stock) return false
+        return product.soh <= product.min_stock * 1.2
+      })
+
+      setLowStockProducts(filtered)
     } catch (error) {
       console.error('Error fetching low stock products:', error)
       toast.error('Failed to load low stock products')
     } finally {
       setLoading(false)
     }
+  }
+
+  const getStockStatus = (product: Product) => {
+    if (!product.min_stock) return null
+
+    const percentage = (product.soh / product.min_stock) * 100
+
+    if (percentage <= 100) {
+      return { color: 'bg-red-100 text-red-700', label: 'Critical' }
+    } else if (percentage <= 110) {
+      return { color: 'bg-orange-100 text-orange-700', label: 'Very Low' }
+    } else if (percentage <= 120) {
+      return { color: 'bg-yellow-100 text-yellow-700', label: 'Low' }
+    }
+    return null
   }
 
   const addTodo = () => {
@@ -107,7 +129,7 @@ export function HomePage() {
               </Button>
             </div>
             <p className="text-sm text-muted-foreground">
-              Products that need reordering (stock ≤ 10)
+              Products below 120% of minimum stock level
             </p>
           </CardHeader>
           <CardContent>
@@ -122,30 +144,35 @@ export function HomePage() {
               </div>
             ) : (
               <div className="space-y-2 max-h-[600px] overflow-y-auto">
-                {lowStockProducts.map((product) => (
-                  <div
-                    key={product.id}
-                    className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
-                  >
-                    <div className="flex-1 min-w-0">
-                      <div className="font-medium truncate">{product.code}</div>
-                      <div className="text-sm text-muted-foreground truncate">
-                        {product.description}
+                {lowStockProducts.map((product) => {
+                  const status = getStockStatus(product)
+                  return (
+                    <div
+                      key={product.id}
+                      className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium truncate">{product.code}</div>
+                        <div className="text-sm text-muted-foreground truncate">
+                          {product.description}
+                        </div>
+                        <div className="text-xs text-muted-foreground mt-1">
+                          Min Stock: {product.min_stock}
+                        </div>
+                      </div>
+                      <div className="ml-4 flex flex-col items-end gap-1">
+                        <div className={`text-lg font-bold px-3 py-1 rounded ${status?.color || 'bg-gray-100 text-gray-700'}`}>
+                          {product.soh}
+                        </div>
+                        {status && (
+                          <span className="text-xs text-muted-foreground">
+                            {status.label}
+                          </span>
+                        )}
                       </div>
                     </div>
-                    <div className="ml-4 flex items-center gap-2">
-                      <div className={`text-lg font-bold px-3 py-1 rounded ${
-                        product.soh === 0
-                          ? 'bg-red-100 text-red-700'
-                          : product.soh <= 5
-                          ? 'bg-orange-100 text-orange-700'
-                          : 'bg-yellow-100 text-yellow-700'
-                      }`}>
-                        {product.soh}
-                      </div>
-                    </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             )}
           </CardContent>
