@@ -233,10 +233,10 @@ export function UseFormDialog({ isOpen, onClose, form, onSuccess }: UseFormDialo
     )
   }
 
-  const focusNextInput = (currentIndex: number) => {
+  const focusNextInput = (currentIndex: number, currentFilteredProducts: ProductWithQuantity[]) => {
     const nextIndex = currentIndex + 1
-    if (nextIndex < products.length) {
-      const nextProductId = products[nextIndex].id
+    if (nextIndex < currentFilteredProducts.length) {
+      const nextProductId = currentFilteredProducts[nextIndex].id
       const nextInput = inputRefs.current.get(nextProductId)
       nextInput?.focus()
     }
@@ -427,7 +427,7 @@ export function UseFormDialog({ isOpen, onClose, form, onSuccess }: UseFormDialo
                       onQuantityChange={(qty) => updateQuantity(product.id, qty)}
                       isFirst={index === 0}
                       inputRef={index === 0 ? firstInputRef : undefined}
-                      onTabPress={() => focusNextInput(index)}
+                      onTabPress={() => focusNextInput(index, filteredProducts)}
                       setInputRef={(el) => {
                         if (el) {
                           inputRefs.current.set(product.id, el)
