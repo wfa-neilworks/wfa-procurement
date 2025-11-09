@@ -79,11 +79,11 @@ function SortableProductCard({ product, quantity, onQuantityChange, isFirst, inp
 
         {/* Product Info */}
         <div className="flex-1 min-w-0">
-          <div className="font-semibold text-lg text-gray-900 mb-1">
-            {product.code}
-          </div>
-          <div className="text-sm text-gray-600 mb-3 line-clamp-2">
+          <div className="text-base font-bold text-gray-900 mb-2 line-clamp-2">
             {product.description}
+          </div>
+          <div className="text-sm text-gray-600 mb-3">
+            {product.code}
           </div>
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium text-gray-700">
