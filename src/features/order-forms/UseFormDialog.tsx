@@ -126,6 +126,7 @@ export function UseFormDialog({ isOpen, onClose, form, onSuccess }: UseFormDialo
   const [products, setProducts] = useState<ProductWithQuantity[]>([])
   const [loading, setLoading] = useState(false)
   const [applying, setApplying] = useState(false)
+  const [selectedCategory, setSelectedCategory] = useState<string>('all')
   const [columns, setColumns] = useState<number>(() => {
     const saved = localStorage.getItem('useFormColumns')
     return saved ? parseInt(saved) : 3
@@ -172,6 +173,12 @@ export function UseFormDialog({ isOpen, onClose, form, onSuccess }: UseFormDialo
         .map(p => ({ ...p, quantity: 0 }))
 
       setProducts(sortedProducts)
+
+      // Set first category as default
+      if (sortedProducts.length > 0) {
+        const firstCategory = sortedProducts[0].category
+        setSelectedCategory(firstCategory || 'all')
+      }
 
       // Focus first input after products are loaded
       setTimeout(() => {
@@ -293,6 +300,14 @@ export function UseFormDialog({ isOpen, onClose, form, onSuccess }: UseFormDialo
 
   if (!isOpen) return null
 
+  // Get unique categories
+  const categories = Array.from(new Set(products.map(p => p.category).filter(Boolean))) as string[]
+
+  // Filter products by selected category
+  const filteredProducts = selectedCategory === 'all'
+    ? products
+    : products.filter(p => p.category === selectedCategory)
+
   return (
     <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
       <div className="bg-gray-50 rounded-lg shadow-2xl w-full h-full max-w-[95vw] max-h-[95vh] flex flex-col">
@@ -349,6 +364,40 @@ export function UseFormDialog({ isOpen, onClose, form, onSuccess }: UseFormDialo
           </div>
         </div>
 
+        {/* Category Tabs */}
+        {categories.length > 0 && (
+          <div className="border-b bg-white px-6">
+            <div className="flex gap-1 overflow-x-auto">
+              <button
+                onClick={() => setSelectedCategory('all')}
+                className={`px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
+                  selectedCategory === 'all'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
+                }`}
+              >
+                All ({products.length})
+              </button>
+              {categories.map(category => {
+                const count = products.filter(p => p.category === category).length
+                return (
+                  <button
+                    key={category}
+                    onClick={() => setSelectedCategory(category)}
+                    className={`px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
+                      selectedCategory === category
+                        ? 'border-blue-500 text-blue-600'
+                        : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
+                    }`}
+                  >
+                    {category} ({count})
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        )}
+
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-6">
           {loading ? (
@@ -362,7 +411,7 @@ export function UseFormDialog({ isOpen, onClose, form, onSuccess }: UseFormDialo
               onDragEnd={handleDragEnd}
             >
               <SortableContext
-                items={products.map(p => p.id)}
+                items={filteredProducts.map(p => p.id)}
                 strategy={verticalListSortingStrategy}
               >
                 <div className={`grid gap-4 ${
@@ -370,7 +419,7 @@ export function UseFormDialog({ isOpen, onClose, form, onSuccess }: UseFormDialo
                   columns === 3 ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' :
                   'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
                 }`}>
-                  {products.map((product, index) => (
+                  {filteredProducts.map((product, index) => (
                     <SortableProductCard
                       key={product.id}
                       product={product}
