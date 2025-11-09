@@ -311,7 +311,7 @@ export function OrderFormsPage() {
                     variant="default"
                     size="sm"
                     onClick={() => handleOpenUseFormDialog(form)}
-                    className="w-full"
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold"
                   >
                     <FileCheck className="h-4 w-4 mr-2" />
                     Use Form
@@ -321,7 +321,7 @@ export function OrderFormsPage() {
                       variant="outline"
                       size="sm"
                       onClick={() => handleOpenDialog(form)}
-                      className="flex-1"
+                      className="flex-1 border-2 border-gray-300 hover:border-gray-400 hover:bg-gray-50 font-medium"
                     >
                       <Pencil className="h-4 w-4 mr-1" />
                       Edit
@@ -330,9 +330,9 @@ export function OrderFormsPage() {
                       variant="outline"
                       size="sm"
                       onClick={() => handleDelete(form.id, form.title)}
-                      className="flex-1"
+                      className="flex-1 border-2 border-red-300 hover:border-red-400 hover:bg-red-50 text-red-600 font-medium"
                     >
-                      <Trash2 className="h-4 w-4 text-destructive mr-1" />
+                      <Trash2 className="h-4 w-4 mr-1" />
                       Delete
                     </Button>
                   </div>
