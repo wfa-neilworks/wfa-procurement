@@ -367,13 +367,13 @@ export function UseFormDialog({ isOpen, onClose, form, onSuccess }: UseFormDialo
         {/* Category Tabs */}
         {categories.length > 0 && (
           <div className="border-b bg-white px-6">
-            <div className="flex gap-1 overflow-x-auto">
+            <div className="flex gap-2 overflow-x-auto">
               <button
                 onClick={() => setSelectedCategory('all')}
-                className={`px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
+                className={`px-4 py-3 text-sm font-semibold whitespace-nowrap rounded-t-lg transition-all ${
                   selectedCategory === 'all'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
+                    ? 'bg-blue-500 text-white shadow-md'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-gray-900'
                 }`}
               >
                 All ({products.length})
@@ -384,10 +384,10 @@ export function UseFormDialog({ isOpen, onClose, form, onSuccess }: UseFormDialo
                   <button
                     key={category}
                     onClick={() => setSelectedCategory(category)}
-                    className={`px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
+                    className={`px-4 py-3 text-sm font-semibold whitespace-nowrap rounded-t-lg transition-all ${
                       selectedCategory === category
-                        ? 'border-blue-500 text-blue-600'
-                        : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
+                        ? 'bg-blue-500 text-white shadow-md'
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-gray-900'
                     }`}
                   >
                     {category} ({count})
