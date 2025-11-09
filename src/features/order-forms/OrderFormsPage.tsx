@@ -311,7 +311,10 @@ export function OrderFormsPage() {
                     variant="default"
                     size="sm"
                     onClick={() => handleOpenUseFormDialog(form)}
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold"
+                    className="w-full text-white font-semibold"
+                    style={{ backgroundColor: '#28363D' }}
+                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#2F575D'}
+                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#28363D'}
                   >
                     <FileCheck className="h-4 w-4 mr-2" />
                     Use Form
@@ -321,7 +324,8 @@ export function OrderFormsPage() {
                       variant="outline"
                       size="sm"
                       onClick={() => handleOpenDialog(form)}
-                      className="flex-1 border-2 border-gray-300 hover:border-gray-400 hover:bg-gray-50 font-medium"
+                      className="flex-1 border-2 hover:bg-gray-50 font-medium"
+                      style={{ borderColor: '#28363D', color: '#28363D' }}
                     >
                       <Pencil className="h-4 w-4 mr-1" />
                       Edit
