@@ -17,6 +17,7 @@ interface TodoItem {
 
 export function HomePage() {
   const [lowStockProducts, setLowStockProducts] = useState<Product[]>([])
+  const [selectedStockFilter, setSelectedStockFilter] = useState<'all' | 'critical' | 'very-low' | 'low'>('all')
   const [todos, setTodos] = useState<TodoItem[]>(() => {
     const saved = localStorage.getItem('homeTodos')
     return saved ? JSON.parse(saved) : []
@@ -131,6 +132,50 @@ export function HomePage() {
             <p className="text-sm text-muted-foreground">
               Products below 120% of minimum stock level
             </p>
+
+            {/* Filter Tabs */}
+            <div className="flex gap-2 mt-4 border-b">
+              <button
+                onClick={() => setSelectedStockFilter('all')}
+                className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                  selectedStockFilter === 'all'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                All ({lowStockProducts.length})
+              </button>
+              <button
+                onClick={() => setSelectedStockFilter('critical')}
+                className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                  selectedStockFilter === 'critical'
+                    ? 'border-red-500 text-red-600'
+                    : 'border-transparent text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                Critical ({lowStockProducts.filter(p => getStockStatus(p)?.label === 'Critical').length})
+              </button>
+              <button
+                onClick={() => setSelectedStockFilter('very-low')}
+                className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                  selectedStockFilter === 'very-low'
+                    ? 'border-orange-500 text-orange-600'
+                    : 'border-transparent text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                Very Low ({lowStockProducts.filter(p => getStockStatus(p)?.label === 'Very Low').length})
+              </button>
+              <button
+                onClick={() => setSelectedStockFilter('low')}
+                className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                  selectedStockFilter === 'low'
+                    ? 'border-yellow-500 text-yellow-600'
+                    : 'border-transparent text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                Low ({lowStockProducts.filter(p => getStockStatus(p)?.label === 'Low').length})
+              </button>
+            </div>
           </CardHeader>
           <CardContent>
             {loading ? (
@@ -144,7 +189,16 @@ export function HomePage() {
               </div>
             ) : (
               <div className="space-y-2 max-h-[600px] overflow-y-auto">
-                {lowStockProducts.map((product) => {
+                {lowStockProducts
+                  .filter(product => {
+                    if (selectedStockFilter === 'all') return true
+                    const status = getStockStatus(product)
+                    if (selectedStockFilter === 'critical') return status?.label === 'Critical'
+                    if (selectedStockFilter === 'very-low') return status?.label === 'Very Low'
+                    if (selectedStockFilter === 'low') return status?.label === 'Low'
+                    return true
+                  })
+                  .map((product) => {
                   const status = getStockStatus(product)
                   return (
                     <div
