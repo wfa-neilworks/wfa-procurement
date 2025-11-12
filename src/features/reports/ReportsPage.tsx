@@ -168,15 +168,15 @@ export function ReportsPage() {
             <>
               {/* Usage Stats */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="bg-gray-50 p-4 rounded-lg">
+                <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
                   <div className="text-sm text-muted-foreground mb-1">Current Size</div>
                   <div className="text-2xl font-bold">{databaseSize.size}</div>
                 </div>
-                <div className="bg-gray-50 p-4 rounded-lg">
+                <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
                   <div className="text-sm text-muted-foreground mb-1">Free Plan Limit</div>
                   <div className="text-2xl font-bold">{FREE_PLAN_DB_LIMIT_MB} MB</div>
                 </div>
-                <div className="bg-gray-50 p-4 rounded-lg">
+                <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
                   <div className="text-sm text-muted-foreground mb-1">Usage</div>
                   <div className="text-2xl font-bold">{getDbUsagePercentage().toFixed(2)}%</div>
                 </div>
@@ -190,7 +190,7 @@ export function ReportsPage() {
                     {databaseSize.size} / {FREE_PLAN_DB_LIMIT_MB} MB
                   </span>
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-4 overflow-hidden">
+                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-4 overflow-hidden">
                   <div
                     className={`h-full transition-all duration-500 ${getUsageColor(getDbUsagePercentage())}`}
                     style={{ width: `${Math.min(getDbUsagePercentage(), 100)}%` }}
@@ -200,14 +200,14 @@ export function ReportsPage() {
 
               {/* Warning if near limit */}
               {getDbUsagePercentage() >= 75 && (
-                <div className="flex items-start gap-3 p-4 bg-orange-50 border border-orange-200 rounded-lg">
-                  <AlertCircle className="h-5 w-5 text-orange-600 mt-0.5" />
+                <div className="flex items-start gap-3 p-4 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg">
+                  <AlertCircle className="h-5 w-5 text-orange-600 dark:text-orange-400 mt-0.5" />
                   <div>
-                    <div className="font-semibold text-orange-900">
+                    <div className="font-semibold text-orange-900 dark:text-orange-200">
                       {getDbUsagePercentage() >= 90 ? 'Critical: ' : 'Warning: '}
                       Approaching Database Limit
                     </div>
-                    <div className="text-sm text-orange-700 mt-1">
+                    <div className="text-sm text-orange-700 dark:text-orange-300 mt-1">
                       Your database is using {getDbUsagePercentage().toFixed(1)}% of available storage.
                       Consider upgrading to a Pro plan or cleaning up old data.
                     </div>
@@ -243,15 +243,15 @@ export function ReportsPage() {
             <>
               {/* Usage Stats */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="bg-gray-50 p-4 rounded-lg">
+                <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
                   <div className="text-sm text-muted-foreground mb-1">Current Size</div>
                   <div className="text-2xl font-bold">{storageSize.size}</div>
                 </div>
-                <div className="bg-gray-50 p-4 rounded-lg">
+                <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
                   <div className="text-sm text-muted-foreground mb-1">Free Plan Limit</div>
                   <div className="text-2xl font-bold">{FREE_PLAN_STORAGE_LIMIT_MB} MB (1 GB)</div>
                 </div>
-                <div className="bg-gray-50 p-4 rounded-lg">
+                <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
                   <div className="text-sm text-muted-foreground mb-1">Usage</div>
                   <div className="text-2xl font-bold">{getStorageUsagePercentage().toFixed(2)}%</div>
                 </div>
@@ -265,7 +265,7 @@ export function ReportsPage() {
                     {storageSize.size} / 1 GB
                   </span>
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-4 overflow-hidden">
+                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-4 overflow-hidden">
                   <div
                     className={`h-full transition-all duration-500 ${getUsageColor(getStorageUsagePercentage())}`}
                     style={{ width: `${Math.min(getStorageUsagePercentage(), 100)}%` }}
@@ -275,14 +275,14 @@ export function ReportsPage() {
 
               {/* Warning if near limit */}
               {getStorageUsagePercentage() >= 75 && (
-                <div className="flex items-start gap-3 p-4 bg-orange-50 border border-orange-200 rounded-lg">
-                  <AlertCircle className="h-5 w-5 text-orange-600 mt-0.5" />
+                <div className="flex items-start gap-3 p-4 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg">
+                  <AlertCircle className="h-5 w-5 text-orange-600 dark:text-orange-400 mt-0.5" />
                   <div>
-                    <div className="font-semibold text-orange-900">
+                    <div className="font-semibold text-orange-900 dark:text-orange-200">
                       {getStorageUsagePercentage() >= 90 ? 'Critical: ' : 'Warning: '}
                       Approaching File Storage Limit
                     </div>
-                    <div className="text-sm text-orange-700 mt-1">
+                    <div className="text-sm text-orange-700 dark:text-orange-300 mt-1">
                       Your file storage is using {getStorageUsagePercentage().toFixed(1)}% of available space.
                       Consider upgrading to a Pro plan or removing unused files.
                     </div>
@@ -315,10 +315,10 @@ export function ReportsPage() {
               {tableSizes.map((table) => (
                 <div
                   key={table.tablename}
-                  className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                  className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                 >
                   <div className="flex items-center gap-3">
-                    <HardDrive className="h-4 w-4 text-gray-500" />
+                    <HardDrive className="h-4 w-4 text-gray-500 dark:text-gray-400" />
                     <span className="font-medium">{table.tablename}</span>
                   </div>
                   <span className="text-sm text-muted-foreground font-mono">
