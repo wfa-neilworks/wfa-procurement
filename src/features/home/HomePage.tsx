@@ -18,7 +18,7 @@ interface TodoItem {
 
 export function HomePage() {
   const [lowStockProducts, setLowStockProducts] = useState<Product[]>([])
-  const [selectedStockFilter, setSelectedStockFilter] = useState<'all' | 'critical' | 'very-low' | 'low' | 'ordered'>('all')
+  const [selectedStockFilter, setSelectedStockFilter] = useState<'critical' | 'very-low' | 'low' | 'ordered'>('critical')
   const [todos, setTodos] = useState<TodoItem[]>(() => {
     const saved = localStorage.getItem('homeTodos')
     return saved ? JSON.parse(saved) : []
@@ -199,16 +199,6 @@ export function HomePage() {
             {/* Filter Tabs */}
             <div className="flex gap-2 mt-4 border-b">
               <button
-                onClick={() => setSelectedStockFilter('all')}
-                className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-                  selectedStockFilter === 'all'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                All ({lowStockProducts.length})
-              </button>
-              <button
                 onClick={() => setSelectedStockFilter('critical')}
                 className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
                   selectedStockFilter === 'critical'
@@ -264,7 +254,6 @@ export function HomePage() {
               <div className="space-y-2 max-h-[600px] overflow-y-auto">
                 {lowStockProducts
                   .filter(product => {
-                    if (selectedStockFilter === 'all') return true
                     if (selectedStockFilter === 'ordered') return product.order_status === 'ordered'
                     const status = getStockStatus(product)
                     if (selectedStockFilter === 'critical') return status?.label === 'Critical'
