@@ -261,6 +261,12 @@ export function HomePage() {
                     if (selectedStockFilter === 'low') return status?.label === 'Low'
                     return true
                   })
+                  .sort((a, b) => {
+                    // Sort: non-ordered items first, ordered items last
+                    const aOrdered = a.order_status === 'ordered' ? 1 : 0
+                    const bOrdered = b.order_status === 'ordered' ? 1 : 0
+                    return aOrdered - bOrdered
+                  })
                   .map((product) => {
                   const status = getStockStatus(product)
                   const isOrdered = product.order_status === 'ordered'
