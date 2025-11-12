@@ -26,6 +26,9 @@ export interface Database {
           price: number | null
           total_in: number
           total_out: number
+          order_status: 'none' | 'ordered' | 'arrived'
+          order_date: string | null
+          expected_arrival: string | null
           created_at: string
           updated_at: string
         }
@@ -42,6 +45,9 @@ export interface Database {
           price?: number | null
           total_in?: number
           total_out?: number
+          order_status?: 'none' | 'ordered' | 'arrived'
+          order_date?: string | null
+          expected_arrival?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -58,6 +64,9 @@ export interface Database {
           price?: number | null
           total_in?: number
           total_out?: number
+          order_status?: 'none' | 'ordered' | 'arrived'
+          order_date?: string | null
+          expected_arrival?: string | null
           created_at?: string
           updated_at?: string
         }

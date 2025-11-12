@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card'
 import { Button } from '../../components/ui/button'
 import { Input } from '../../components/ui/input'
-import { Plus, X, AlertTriangle, Package } from 'lucide-react'
+import { Plus, X, AlertTriangle, Package, CheckCircle, Clock } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { toast } from 'sonner'
 import type { Database } from '../../types/database'
@@ -17,7 +17,7 @@ interface TodoItem {
 
 export function HomePage() {
   const [lowStockProducts, setLowStockProducts] = useState<Product[]>([])
-  const [selectedStockFilter, setSelectedStockFilter] = useState<'all' | 'critical' | 'very-low' | 'low'>('all')
+  const [selectedStockFilter, setSelectedStockFilter] = useState<'all' | 'critical' | 'very-low' | 'low' | 'ordered'>('all')
   const [todos, setTodos] = useState<TodoItem[]>(() => {
     const saved = localStorage.getItem('homeTodos')
     return saved ? JSON.parse(saved) : []
@@ -103,6 +103,47 @@ export function HomePage() {
     }
   }
 
+  const markAsOrdered = async (productId: string) => {
+    try {
+      const { error } = await supabase
+        .from('products')
+        .update({
+          order_status: 'ordered',
+          order_date: new Date().toISOString()
+        })
+        .eq('id', productId)
+
+      if (error) throw error
+
+      toast.success('Product marked as ordered')
+      fetchLowStockProducts()
+    } catch (error) {
+      console.error('Error marking as ordered:', error)
+      toast.error('Failed to mark as ordered')
+    }
+  }
+
+  const markAsArrived = async (productId: string) => {
+    try {
+      const { error } = await supabase
+        .from('products')
+        .update({
+          order_status: 'none',
+          order_date: null,
+          expected_arrival: null
+        })
+        .eq('id', productId)
+
+      if (error) throw error
+
+      toast.success('Product marked as arrived')
+      fetchLowStockProducts()
+    } catch (error) {
+      console.error('Error marking as arrived:', error)
+      toast.error('Failed to mark as arrived')
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div>
@@ -175,6 +216,16 @@ export function HomePage() {
               >
                 Low ({lowStockProducts.filter(p => getStockStatus(p)?.label === 'Low').length})
               </button>
+              <button
+                onClick={() => setSelectedStockFilter('ordered')}
+                className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                  selectedStockFilter === 'ordered'
+                    ? 'border-green-500 text-green-600'
+                    : 'border-transparent text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                Ordered ({lowStockProducts.filter(p => p.order_status === 'ordered').length})
+              </button>
             </div>
           </CardHeader>
           <CardContent>
@@ -192,6 +243,7 @@ export function HomePage() {
                 {lowStockProducts
                   .filter(product => {
                     if (selectedStockFilter === 'all') return true
+                    if (selectedStockFilter === 'ordered') return product.order_status === 'ordered'
                     const status = getStockStatus(product)
                     if (selectedStockFilter === 'critical') return status?.label === 'Critical'
                     if (selectedStockFilter === 'very-low') return status?.label === 'Very Low'
@@ -200,28 +252,66 @@ export function HomePage() {
                   })
                   .map((product) => {
                   const status = getStockStatus(product)
+                  const isOrdered = product.order_status === 'ordered'
                   return (
                     <div
                       key={product.id}
                       className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
                     >
                       <div className="flex-1 min-w-0">
-                        <div className="font-medium truncate">{product.code}</div>
+                        <div className="flex items-center gap-2">
+                          <div className="font-medium truncate">{product.code}</div>
+                          {isOrdered && (
+                            <div className="flex items-center gap-1 bg-green-100 text-green-700 px-2 py-0.5 rounded text-xs">
+                              <CheckCircle className="h-3 w-3" />
+                              Ordered
+                            </div>
+                          )}
+                        </div>
                         <div className="text-sm text-muted-foreground truncate">
                           {product.description}
                         </div>
                         <div className="text-xs text-muted-foreground mt-1">
                           Min Stock: {product.min_stock}
                         </div>
+                        {isOrdered && product.order_date && (
+                          <div className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                            <Clock className="h-3 w-3" />
+                            {new Date(product.order_date).toLocaleDateString()}
+                          </div>
+                        )}
                       </div>
-                      <div className="ml-4 flex flex-col items-end gap-1">
-                        <div className={`text-lg font-bold px-3 py-1 rounded ${status?.color || 'bg-gray-100 text-gray-700'}`}>
-                          {product.soh}
+                      <div className="ml-4 flex flex-col items-end gap-2">
+                        <div className="flex flex-col items-end gap-1">
+                          <div className={`text-lg font-bold px-3 py-1 rounded ${
+                            isOrdered ? 'bg-green-100 text-green-700' : status?.color || 'bg-gray-100 text-gray-700'
+                          }`}>
+                            {product.soh}
+                          </div>
+                          {!isOrdered && status && (
+                            <span className="text-xs text-muted-foreground">
+                              {status.label}
+                            </span>
+                          )}
                         </div>
-                        {status && (
-                          <span className="text-xs text-muted-foreground">
-                            {status.label}
-                          </span>
+                        {isOrdered ? (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => markAsArrived(product.id)}
+                            className="text-xs h-7"
+                          >
+                            Mark Arrived
+                          </Button>
+                        ) : (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => markAsOrdered(product.id)}
+                            className="text-xs h-7"
+                          >
+                            Mark Ordered
+                          </Button>
                         )}
                       </div>
                     </div>
