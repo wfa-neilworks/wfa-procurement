@@ -65,12 +65,12 @@ function SortableProductCard({ product, quantity, onQuantityChange, isFirst, inp
     <div
       ref={setNodeRef}
       style={style}
-      className="bg-white rounded-lg border-2 border-gray-200 p-4 hover:border-gray-300 transition-all"
+      className="bg-white dark:bg-gray-800 rounded-lg border-2 border-gray-200 dark:border-gray-700 p-4 hover:border-gray-300 dark:hover:border-gray-600 transition-all"
     >
       <div className="flex items-start gap-3">
         {/* Drag Handle */}
         <button
-          className="mt-1 cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600"
+          className="mt-1 cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
           {...attributes}
           {...listeners}
         >
@@ -79,18 +79,18 @@ function SortableProductCard({ product, quantity, onQuantityChange, isFirst, inp
 
         {/* Product Info */}
         <div className="flex-1 min-w-0">
-          <div className="text-base font-bold text-gray-900 mb-2 line-clamp-2">
+          <div className="text-base font-bold text-gray-900 dark:text-gray-100 mb-2 line-clamp-2">
             {product.description}
           </div>
-          <div className="text-sm text-gray-600 mb-3">
+          <div className="text-sm text-gray-600 dark:text-gray-400 mb-3">
             {product.code}
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-gray-700">
-              SOH: <span className="text-blue-600">{product.soh}</span>
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              SOH: <span className="text-blue-600 dark:text-blue-400">{product.soh}</span>
             </span>
             <div className="flex items-center gap-2">
-              <label className="text-sm font-medium text-gray-700">Qty:</label>
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Qty:</label>
               <Input
                 ref={(el) => {
                   if (inputRef && 'current' in inputRef) {
@@ -310,26 +310,26 @@ export function UseFormDialog({ isOpen, onClose, form, onSuccess }: UseFormDialo
 
   return (
     <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-      <div className="bg-gray-50 rounded-lg shadow-2xl w-full h-full max-w-[95vw] max-h-[95vh] flex flex-col">
+      <div className="bg-gray-50 dark:bg-gray-900 rounded-lg shadow-2xl w-full h-full max-w-[95vw] max-h-[95vh] flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b bg-white rounded-t-lg">
+        <div className="flex items-center justify-between p-6 border-b dark:border-gray-700 bg-white dark:bg-gray-800 rounded-t-lg">
           <div>
-            <h2 className="text-2xl font-bold text-gray-900">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
               Use Form: {form?.title}
             </h2>
-            <p className="text-sm text-gray-600 mt-1">
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
               Enter quantities to deduct for each product
             </p>
           </div>
           <div className="flex items-center gap-3">
             {/* Column Selector */}
-            <div className="flex items-center gap-2 border rounded-lg p-1 bg-gray-50">
+            <div className="flex items-center gap-2 border dark:border-gray-600 rounded-lg p-1 bg-gray-50 dark:bg-gray-700">
               <button
                 onClick={() => setColumns(2)}
                 className={`p-2 rounded transition-colors ${
                   columns === 2
                     ? 'bg-blue-500 text-white'
-                    : 'text-gray-600 hover:bg-gray-200'
+                    : 'text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                 }`}
                 title="2 columns"
               >
@@ -340,7 +340,7 @@ export function UseFormDialog({ isOpen, onClose, form, onSuccess }: UseFormDialo
                 className={`p-2 rounded transition-colors ${
                   columns === 3
                     ? 'bg-blue-500 text-white'
-                    : 'text-gray-600 hover:bg-gray-200'
+                    : 'text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                 }`}
                 title="3 columns"
               >
@@ -351,7 +351,7 @@ export function UseFormDialog({ isOpen, onClose, form, onSuccess }: UseFormDialo
                 className={`p-2 rounded transition-colors ${
                   columns === 4
                     ? 'bg-blue-500 text-white'
-                    : 'text-gray-600 hover:bg-gray-200'
+                    : 'text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                 }`}
                 title="4 columns"
               >
@@ -366,14 +366,14 @@ export function UseFormDialog({ isOpen, onClose, form, onSuccess }: UseFormDialo
 
         {/* Category Tabs */}
         {categories.length > 0 && (
-          <div className="border-b bg-white px-6">
+          <div className="border-b dark:border-gray-700 bg-white dark:bg-gray-800 px-6">
             <div className="flex gap-2 overflow-x-auto">
               <button
                 onClick={() => setSelectedCategory('all')}
                 className={`px-4 py-3 text-sm font-semibold whitespace-nowrap rounded-t-lg transition-all ${
                   selectedCategory === 'all'
                     ? 'bg-blue-500 text-white shadow-md'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-gray-900'
+                    : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 hover:text-gray-900 dark:hover:text-gray-100'
                 }`}
               >
                 All ({products.length})
@@ -387,7 +387,7 @@ export function UseFormDialog({ isOpen, onClose, form, onSuccess }: UseFormDialo
                     className={`px-4 py-3 text-sm font-semibold whitespace-nowrap rounded-t-lg transition-all ${
                       selectedCategory === category
                         ? 'bg-blue-500 text-white shadow-md'
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-gray-900'
+                        : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 hover:text-gray-900 dark:hover:text-gray-100'
                     }`}
                   >
                     {category} ({count})
@@ -402,7 +402,7 @@ export function UseFormDialog({ isOpen, onClose, form, onSuccess }: UseFormDialo
         <div className="flex-1 overflow-y-auto p-6">
           {loading ? (
             <div className="flex items-center justify-center h-full">
-              <div className="text-gray-500">Loading products...</div>
+              <div className="text-gray-500 dark:text-gray-400">Loading products...</div>
             </div>
           ) : (
             <DndContext
@@ -444,8 +444,8 @@ export function UseFormDialog({ isOpen, onClose, form, onSuccess }: UseFormDialo
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between p-6 border-t bg-white rounded-b-lg">
-          <div className="text-sm text-gray-600">
+        <div className="flex items-center justify-between p-6 border-t dark:border-gray-700 bg-white dark:bg-gray-800 rounded-b-lg">
+          <div className="text-sm text-gray-600 dark:text-gray-400">
             {products.filter(p => p.quantity > 0).length} product(s) with quantities
           </div>
           <div className="flex gap-3">
