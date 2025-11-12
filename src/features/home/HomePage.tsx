@@ -6,6 +6,7 @@ import { Plus, X, AlertTriangle, Package, CheckCircle, Clock } from 'lucide-reac
 import { supabase } from '../../lib/supabase'
 import { toast } from 'sonner'
 import type { Database } from '../../types/database'
+import { AddStockDialog } from './AddStockDialog'
 
 type Product = Database['public']['Tables']['products']['Row']
 
@@ -24,6 +25,8 @@ export function HomePage() {
   })
   const [newTodo, setNewTodo] = useState('')
   const [loading, setLoading] = useState(true)
+  const [addStockDialogOpen, setAddStockDialogOpen] = useState(false)
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
 
   useEffect(() => {
     fetchLowStockProducts()
@@ -123,20 +126,39 @@ export function HomePage() {
     }
   }
 
-  const markAsArrived = async (productId: string) => {
+  const handleOpenAddStockDialog = (product: Product) => {
+    setSelectedProduct(product)
+    setAddStockDialogOpen(true)
+  }
+
+  const handleAddStockConfirm = async (addQuantity: number) => {
+    if (!selectedProduct) return
+
     try {
+      const updates: any = {
+        order_status: 'none',
+        order_date: null,
+        expected_arrival: null
+      }
+
+      // If user wants to add quantity, update SOH
+      if (addQuantity > 0) {
+        updates.soh = selectedProduct.soh + addQuantity
+      }
+
       const { error } = await supabase
         .from('products')
-        .update({
-          order_status: 'none',
-          order_date: null,
-          expected_arrival: null
-        })
-        .eq('id', productId)
+        .update(updates)
+        .eq('id', selectedProduct.id)
 
       if (error) throw error
 
-      toast.success('Product marked as arrived')
+      if (addQuantity > 0) {
+        toast.success(`Added ${addQuantity} to stock and marked as arrived`)
+      } else {
+        toast.success('Product marked as arrived')
+      }
+
       fetchLowStockProducts()
     } catch (error) {
       console.error('Error marking as arrived:', error)
@@ -281,14 +303,12 @@ export function HomePage() {
                           </div>
                         )}
                       </div>
-                      <div className="ml-4 flex flex-col items-end gap-2">
+                      <div className="ml-4 flex items-center gap-2">
                         <div className="flex flex-col items-end gap-1">
-                          <div className={`text-lg font-bold px-3 py-1 rounded ${
-                            isOrdered ? 'bg-green-100 text-green-700' : status?.color || 'bg-gray-100 text-gray-700'
-                          }`}>
+                          <div className={`text-lg font-bold px-3 py-1 rounded ${status?.color || 'bg-gray-100 text-gray-700'}`}>
                             {product.soh}
                           </div>
-                          {!isOrdered && status && (
+                          {status && (
                             <span className="text-xs text-muted-foreground">
                               {status.label}
                             </span>
@@ -298,7 +318,7 @@ export function HomePage() {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => markAsArrived(product.id)}
+                            onClick={() => handleOpenAddStockDialog(product)}
                             className="text-xs h-7"
                           >
                             Mark Arrived
@@ -384,6 +404,18 @@ export function HomePage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Add Stock Dialog */}
+      {selectedProduct && (
+        <AddStockDialog
+          isOpen={addStockDialogOpen}
+          onClose={() => setAddStockDialogOpen(false)}
+          productCode={selectedProduct.code}
+          productDescription={selectedProduct.description || ''}
+          currentSOH={selectedProduct.soh}
+          onConfirm={handleAddStockConfirm}
+        />
+      )}
     </div>
   )
 }
