@@ -75,7 +75,7 @@ export function AddStockDialog({
 
         <div className="space-y-4 py-4">
           {/* Product Info */}
-          <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg space-y-2">
+          <div className="bg-muted p-4 rounded-lg space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Product Code:</span>
               <span className="font-semibold">{productCode}</span>

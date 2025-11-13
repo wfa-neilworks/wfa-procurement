@@ -46,7 +46,7 @@ export function DialogContent({
     <div
       className={cn(
         "relative rounded-lg shadow-2xl p-8 w-[95vw] max-w-[1400px]",
-        "bg-white dark:bg-gray-900 border-t-4 border-[#6D9197]",
+        "bg-card text-card-foreground border-t-4 border-[#6D9197]",
         className
       )}
       {...props}
@@ -54,7 +54,7 @@ export function DialogContent({
       {onClose && (
         <button
           onClick={onClose}
-          className="absolute right-4 top-4 rounded-sm opacity-70 transition-opacity hover:opacity-100 focus:outline-none text-gray-900 dark:text-gray-100"
+          className="absolute right-4 top-4 rounded-sm opacity-70 transition-opacity hover:opacity-100 focus:outline-none text-foreground"
         >
           <X className="h-4 w-4" />
           <span className="sr-only">Close</span>
@@ -87,7 +87,7 @@ export function DialogTitle({
   return (
     <h2
       className={cn(
-        "text-xl font-bold leading-none tracking-tight text-gray-900 dark:text-gray-100",
+        "text-xl font-bold leading-none tracking-tight text-foreground",
         className
       )}
       {...props}
