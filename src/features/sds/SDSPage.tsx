@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Plus, Pencil, Trash2, Search, FileText, ExternalLink } from 'lucide-react'
+import { Plus, Pencil, Trash2, Search, FileText, ExternalLink, Upload, X, Eye, Download } from 'lucide-react'
 import { toast } from 'sonner'
 import { supabase } from '../../lib/supabase'
 import { Button } from '../../components/ui/button'
@@ -42,6 +42,10 @@ export function SDSPage() {
     location: '',
     pdf_url: '',
   })
+
+  // File upload state
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [uploadingFile, setUploadingFile] = useState(false)
 
   // Fetch chemicals
   useEffect(() => {
@@ -96,12 +100,57 @@ export function SDSPage() {
         pdf_url: '',
       })
     }
+    setSelectedFile(null)
     setIsDialogOpen(true)
   }
 
   const handleCloseDialog = () => {
     setIsDialogOpen(false)
     setEditingChemical(null)
+    setSelectedFile(null)
+  }
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      if (file.type !== 'application/pdf') {
+        toast.error('Only PDF files are allowed')
+        return
+      }
+      setSelectedFile(file)
+    }
+  }
+
+  const handleRemoveSelectedFile = () => {
+    setSelectedFile(null)
+  }
+
+  const uploadPDF = async (chemicalId: string, chemicalName: string) => {
+    if (!selectedFile) return null
+
+    setUploadingFile(true)
+    try {
+      const fileName = `sds/${chemicalId}/${Date.now()}-${selectedFile.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`
+
+      const { error: uploadError } = await supabase.storage
+        .from('certificates')
+        .upload(fileName, selectedFile)
+
+      if (uploadError) throw uploadError
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('certificates')
+        .getPublicUrl(fileName)
+
+      toast.success('SDS document uploaded successfully')
+      return publicUrl
+    } catch (error) {
+      console.error('Error uploading PDF:', error)
+      toast.error('Failed to upload SDS document')
+      return null
+    } finally {
+      setUploadingFile(false)
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -113,12 +162,25 @@ export function SDSPage() {
     }
 
     try {
+      let chemicalId: string
+      let pdfUrl = formData.pdf_url
+
       if (editingChemical) {
+        chemicalId = editingChemical.id
+
+        // Upload new PDF if selected
+        if (selectedFile) {
+          const uploadedUrl = await uploadPDF(chemicalId, formData.name)
+          if (uploadedUrl) {
+            pdfUrl = uploadedUrl
+          }
+        }
+
         // Update existing chemical
         const updateData: SDSChemicalUpdate = {
           name: formData.name,
           location: formData.location,
-          pdf_url: formData.pdf_url || null,
+          pdf_url: pdfUrl || null,
         }
 
         const { error } = await supabase
@@ -129,18 +191,35 @@ export function SDSPage() {
         if (error) throw error
         toast.success(`Successfully updated chemical "${formData.name}"`)
       } else {
-        // Create new chemical
+        // Create new chemical first
         const insertData: SDSChemicalInsert = {
           name: formData.name,
           location: formData.location,
-          pdf_url: formData.pdf_url || null,
         }
 
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from('sds_chemicals')
           .insert(insertData)
+          .select()
+          .single()
 
         if (error) throw error
+        chemicalId = data.id
+
+        // Upload PDF if selected
+        if (selectedFile) {
+          const uploadedUrl = await uploadPDF(chemicalId, formData.name)
+          if (uploadedUrl) {
+            // Update the chemical with the PDF URL
+            const { error: updateError } = await supabase
+              .from('sds_chemicals')
+              .update({ pdf_url: uploadedUrl })
+              .eq('id', chemicalId)
+
+            if (updateError) throw updateError
+          }
+        }
+
         toast.success(`Successfully added chemical "${formData.name}"`)
       }
 
@@ -212,7 +291,7 @@ export function SDSPage() {
 
       {/* Table */}
       <Card>
-        <div className="overflow-x-auto">
+        <div className="overflow-auto max-h-[calc(100vh-280px)]">
           <Table>
             <TableHeader>
               <TableRow>
@@ -315,24 +394,83 @@ export function SDSPage() {
                 required
               />
             </div>
-            <div>
-              <label className="text-sm font-medium">SDS Document URL (Optional)</label>
-              <Input
-                type="url"
-                value={formData.pdf_url}
-                onChange={(e) => setFormData({ ...formData, pdf_url: e.target.value })}
-                placeholder="https://example.com/sds/document.pdf"
-              />
-              <p className="text-xs text-muted-foreground mt-1">
-                Provide a link to the Safety Data Sheet PDF document
-              </p>
+
+            {/* SDS Document Upload Section */}
+            <div className="space-y-3">
+              <label className="text-sm font-medium">SDS Document (PDF)</label>
+
+              {/* File Upload */}
+              <div className="border-2 border-dashed rounded-lg p-4 hover:border-primary/50 transition-colors"
+                   style={{ borderColor: 'hsl(var(--border))' }}>
+                <label htmlFor="sds-file-upload" className="cursor-pointer flex flex-col items-center gap-2">
+                  <Upload className="h-8 w-8" style={{ color: 'hsl(var(--muted-foreground))' }} />
+                  <span className="text-sm" style={{ color: 'hsl(var(--foreground))' }}>
+                    Click to upload SDS PDF
+                  </span>
+                  <span className="text-xs" style={{ color: 'hsl(var(--muted-foreground))' }}>
+                    PDF files only
+                  </span>
+                </label>
+                <input
+                  id="sds-file-upload"
+                  type="file"
+                  accept=".pdf,application/pdf"
+                  onChange={handleFileSelect}
+                  className="hidden"
+                />
+              </div>
+
+              {/* Selected File Preview */}
+              {selectedFile && (
+                <div className="flex items-center justify-between p-2 rounded border"
+                     style={{ backgroundColor: 'hsl(var(--muted))', borderColor: 'hsl(var(--border))' }}>
+                  <div className="flex items-center gap-2">
+                    <FileText className="h-4 w-4" style={{ color: 'hsl(var(--primary))' }} />
+                    <span className="text-sm" style={{ color: 'hsl(var(--foreground))' }}>{selectedFile.name}</span>
+                    <span className="text-xs" style={{ color: 'hsl(var(--muted-foreground))' }}>
+                      ({(selectedFile.size / 1024).toFixed(1)} KB)
+                    </span>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleRemoveSelectedFile}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
+
+              {/* Existing PDF URL */}
+              {formData.pdf_url && !selectedFile && (
+                <div className="flex items-center justify-between p-2 rounded border"
+                     style={{ backgroundColor: 'hsl(var(--muted))', borderColor: 'hsl(var(--border))' }}>
+                  <div className="flex items-center gap-2">
+                    <FileText className="h-4 w-4" style={{ color: 'hsl(var(--primary))' }} />
+                    <span className="text-sm" style={{ color: 'hsl(var(--foreground))' }}>Current SDS Document</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => window.open(formData.pdf_url, '_blank')}
+                    >
+                      <Eye className="h-4 w-4 mr-1" />
+                      View
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
+
             <DialogFooter>
               <Button type="button" variant="outline" onClick={handleCloseDialog}>
                 Cancel
               </Button>
-              <Button type="submit">
-                {editingChemical ? 'Update' : 'Add'} Chemical
+              <Button type="submit" disabled={uploadingFile}>
+                {uploadingFile ? 'Uploading...' : editingChemical ? 'Update' : 'Add'} Chemical
               </Button>
             </DialogFooter>
           </form>
