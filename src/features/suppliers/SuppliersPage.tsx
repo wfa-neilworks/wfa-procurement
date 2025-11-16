@@ -324,7 +324,7 @@ export function SuppliersPage() {
       </div>
 
       <Card>
-        <div className="overflow-x-auto">
+        <div className="overflow-auto max-h-[calc(100vh-280px)]">
           <Table>
             <TableHeader>
               <TableRow>
