@@ -1,4 +1,5 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
+import { createContext, useContext, useEffect, useState } from 'react'
+import type { ReactNode } from 'react'
 
 type Theme = 'light' | 'dark'
 
@@ -12,8 +13,8 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined)
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setThemeState] = useState<Theme>(() => {
-    const saved = localStorage.getItem('theme') as Theme
-    const initialTheme = saved || 'light'
+    const saved = localStorage.getItem('theme')
+    const initialTheme: Theme = (saved === 'dark' || saved === 'light') ? saved : 'light'
     // Immediately apply theme to prevent flash
     const root = window.document.documentElement
     root.classList.remove('light', 'dark')
