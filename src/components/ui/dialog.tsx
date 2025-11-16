@@ -25,8 +25,7 @@ export function Dialog({ open, onOpenChange, children }: DialogProps) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div
-        className="fixed inset-0"
-        style={{ backgroundColor: 'rgba(40, 54, 61, 0.85)' }}
+        className="fixed inset-0 bg-black/50"
         onClick={() => onOpenChange(false)}
       />
       <div className="relative z-50 max-h-[90vh] overflow-y-auto">
