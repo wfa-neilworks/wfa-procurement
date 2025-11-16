@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Plus, Pencil, Trash2, Search, Mail, Phone, FileCheck, Upload, X, Download } from 'lucide-react'
+import { Plus, Pencil, Trash2, Search, Mail, Phone, FileCheck, Upload, X, Download, Eye } from 'lucide-react'
 import { toast } from 'sonner'
 import { supabase } from '../../lib/supabase'
 import { Button } from '../../components/ui/button'
@@ -45,6 +45,10 @@ export function SuppliersPage() {
   const [certificates, setCertificates] = useState<Array<{ title: string; url: string }>>([])
   const [uploadingFiles, setUploadingFiles] = useState(false)
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
+
+  // View certificates dialog state
+  const [viewCertificatesOpen, setViewCertificatesOpen] = useState(false)
+  const [viewingSupplier, setViewingSupplier] = useState<Supplier | null>(null)
 
   useEffect(() => {
     fetchSuppliers()
@@ -282,6 +286,15 @@ export function SuppliersPage() {
     }
   }
 
+  const handleViewCertificates = (supplier: Supplier) => {
+    setViewingSupplier(supplier)
+    setViewCertificatesOpen(true)
+  }
+
+  const handleDownloadCertificate = (url: string, title: string) => {
+    window.open(url, '_blank')
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -319,63 +332,81 @@ export function SuppliersPage() {
                 <TableHead>Contact Person</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Phone</TableHead>
+                <TableHead>Certificates</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                     Loading...
                   </TableCell>
                 </TableRow>
               ) : filteredSuppliers.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                     {searchTerm ? 'No suppliers found' : 'No suppliers yet'}
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredSuppliers.map((supplier) => (
-                  <TableRow key={supplier.id}>
-                    <TableCell className="font-medium">{supplier.name}</TableCell>
-                    <TableCell>{supplier.contact || '-'}</TableCell>
-                    <TableCell>
-                      {supplier.email ? (
-                        <a href={`mailto:${supplier.email}`} className="inline-flex items-center gap-1 text-primary hover:underline">
-                          <Mail className="h-3 w-3" />
-                          {supplier.email}
-                        </a>
-                      ) : '-'}
-                    </TableCell>
-                    <TableCell>
-                      {supplier.phone ? (
-                        <a href={`tel:${supplier.phone}`} className="inline-flex items-center gap-1 text-primary hover:underline">
-                          <Phone className="h-3 w-3" />
-                          {supplier.phone}
-                        </a>
-                      ) : '-'}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleOpenDialog(supplier)}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDelete(supplier.id, supplier.name)}
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
+                filteredSuppliers.map((supplier) => {
+                  const certs = Array.isArray(supplier.certificates) ? supplier.certificates : []
+                  return (
+                    <TableRow key={supplier.id}>
+                      <TableCell className="font-medium">{supplier.name}</TableCell>
+                      <TableCell>{supplier.contact || '-'}</TableCell>
+                      <TableCell>
+                        {supplier.email ? (
+                          <a href={`mailto:${supplier.email}`} className="inline-flex items-center gap-1 text-primary hover:underline">
+                            <Mail className="h-3 w-3" />
+                            {supplier.email}
+                          </a>
+                        ) : '-'}
+                      </TableCell>
+                      <TableCell>
+                        {supplier.phone ? (
+                          <a href={`tel:${supplier.phone}`} className="inline-flex items-center gap-1 text-primary hover:underline">
+                            <Phone className="h-3 w-3" />
+                            {supplier.phone}
+                          </a>
+                        ) : '-'}
+                      </TableCell>
+                      <TableCell>
+                        {certs.length > 0 ? (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleViewCertificates(supplier)}
+                          >
+                            <Eye className="h-4 w-4 mr-2" />
+                            View ({certs.length})
+                          </Button>
+                        ) : (
+                          <span className="text-muted-foreground text-sm">None</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleOpenDialog(supplier)}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDelete(supplier.id, supplier.name)}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  )
+                })
               )}
             </TableBody>
           </Table>
@@ -433,33 +464,38 @@ export function SuppliersPage() {
               <label className="text-sm font-medium">Certificates (PDF)</label>
 
               {/* File Upload */}
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 hover:border-gray-400 transition-colors">
-                <label className="cursor-pointer flex flex-col items-center gap-2">
-                  <Upload className="h-8 w-8 text-gray-400" />
-                  <span className="text-sm text-gray-600">
+              <div className="border-2 border-dashed rounded-lg p-4 hover:border-primary/50 transition-colors"
+                   style={{ borderColor: 'hsl(var(--border))' }}>
+                <label htmlFor="file-upload" className="cursor-pointer flex flex-col items-center gap-2">
+                  <Upload className="h-8 w-8" style={{ color: 'hsl(var(--muted-foreground))' }} />
+                  <span className="text-sm" style={{ color: 'hsl(var(--foreground))' }}>
                     Click to upload or drag and drop
                   </span>
-                  <span className="text-xs text-gray-500">PDF files only</span>
-                  <input
-                    type="file"
-                    multiple
-                    accept=".pdf"
-                    onChange={handleFileSelect}
-                    className="hidden"
-                  />
+                  <span className="text-xs" style={{ color: 'hsl(var(--muted-foreground))' }}>
+                    PDF files only
+                  </span>
                 </label>
+                <input
+                  id="file-upload"
+                  type="file"
+                  multiple
+                  accept=".pdf,application/pdf"
+                  onChange={handleFileSelect}
+                  className="hidden"
+                />
               </div>
 
               {/* Selected Files (to be uploaded) */}
               {selectedFiles.length > 0 && (
                 <div className="space-y-2">
-                  <p className="text-xs text-gray-500">Ready to upload:</p>
+                  <p className="text-xs" style={{ color: 'hsl(var(--muted-foreground))' }}>Ready to upload:</p>
                   {selectedFiles.map((file, index) => (
-                    <div key={index} className="flex items-center justify-between p-2 bg-blue-50 rounded border border-blue-200">
+                    <div key={index} className="flex items-center justify-between p-2 rounded border"
+                         style={{ backgroundColor: 'hsl(var(--muted))', borderColor: 'hsl(var(--border))' }}>
                       <div className="flex items-center gap-2">
-                        <FileCheck className="h-4 w-4 text-blue-600" />
-                        <span className="text-sm">{file.name}</span>
-                        <span className="text-xs text-gray-500">
+                        <FileCheck className="h-4 w-4" style={{ color: 'hsl(var(--primary))' }} />
+                        <span className="text-sm" style={{ color: 'hsl(var(--foreground))' }}>{file.name}</span>
+                        <span className="text-xs" style={{ color: 'hsl(var(--muted-foreground))' }}>
                           ({(file.size / 1024).toFixed(1)} KB)
                         </span>
                       </div>
@@ -479,12 +515,13 @@ export function SuppliersPage() {
               {/* Existing Certificates */}
               {certificates.length > 0 && (
                 <div className="space-y-2">
-                  <p className="text-xs text-gray-500">Uploaded certificates:</p>
+                  <p className="text-xs" style={{ color: 'hsl(var(--muted-foreground))' }}>Uploaded certificates:</p>
                   {certificates.map((cert, index) => (
-                    <div key={index} className="flex items-center justify-between p-2 bg-green-50 rounded border border-green-200">
+                    <div key={index} className="flex items-center justify-between p-2 rounded border"
+                         style={{ backgroundColor: 'hsl(var(--muted))', borderColor: 'hsl(var(--border))' }}>
                       <div className="flex items-center gap-2">
-                        <FileCheck className="h-4 w-4 text-green-600" />
-                        <span className="text-sm">{cert.title}</span>
+                        <FileCheck className="h-4 w-4" style={{ color: 'hsl(var(--primary))' }} />
+                        <span className="text-sm" style={{ color: 'hsl(var(--foreground))' }}>{cert.title}</span>
                       </div>
                       <div className="flex gap-1">
                         <Button
@@ -519,6 +556,66 @@ export function SuppliersPage() {
               </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* View Certificates Dialog */}
+      <Dialog open={viewCertificatesOpen} onOpenChange={setViewCertificatesOpen}>
+        <DialogContent onClose={() => setViewCertificatesOpen(false)}>
+          <DialogHeader>
+            <DialogTitle>
+              Certificates - {viewingSupplier?.name}
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-3">
+            {viewingSupplier && Array.isArray(viewingSupplier.certificates) && viewingSupplier.certificates.length > 0 ? (
+              (viewingSupplier.certificates as Array<{ title: string; url: string }>).map((cert, index) => (
+                <div
+                  key={index}
+                  className="flex items-center justify-between p-3 rounded border"
+                  style={{ backgroundColor: 'hsl(var(--muted))', borderColor: 'hsl(var(--border))' }}
+                >
+                  <div className="flex items-center gap-3">
+                    <FileCheck className="h-5 w-5" style={{ color: 'hsl(var(--primary))' }} />
+                    <div>
+                      <p className="text-sm font-medium" style={{ color: 'hsl(var(--foreground))' }}>
+                        {cert.title}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => window.open(cert.url, '_blank')}
+                    >
+                      <Eye className="h-4 w-4 mr-2" />
+                      View
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDownloadCertificate(cert.url, cert.title)}
+                    >
+                      <Download className="h-4 w-4 mr-2" />
+                      Download
+                    </Button>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-muted-foreground">No certificates available</p>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setViewCertificatesOpen(false)}>
+              Close
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
