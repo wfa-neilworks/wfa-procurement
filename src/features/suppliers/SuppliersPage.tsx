@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Plus, Pencil, Trash2, Search, Mail, Phone, FileCheck, Upload, X, Download, Eye } from 'lucide-react'
+import { Plus, Pencil, Trash2, Search, Mail, Phone, Eye, Calendar, AlertCircle } from 'lucide-react'
 import { toast } from 'sonner'
 import { supabase } from '../../lib/supabase'
 import { Button } from '../../components/ui/button'
@@ -25,6 +25,8 @@ import type { Database } from '../../types/database'
 type Supplier = Database['public']['Tables']['suppliers']['Row']
 type SupplierInsert = Database['public']['Tables']['suppliers']['Insert']
 type SupplierUpdate = Database['public']['Tables']['suppliers']['Update']
+type Certificate = Database['public']['Tables']['supplier_certificates']['Row']
+type CertificateInsert = Database['public']['Tables']['supplier_certificates']['Insert']
 
 export function SuppliersPage() {
   const [suppliers, setSuppliers] = useState<Supplier[]>([])
@@ -32,9 +34,9 @@ export function SuppliersPage() {
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
 
+  // Add/Edit supplier dialog
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null)
-
   const [formData, setFormData] = useState({
     name: '',
     contact: '',
@@ -42,13 +44,20 @@ export function SuppliersPage() {
     phone: '',
   })
 
-  const [certificates, setCertificates] = useState<Array<{ title: string; url: string }>>([])
-  const [uploadingFiles, setUploadingFiles] = useState(false)
-  const [selectedFiles, setSelectedFiles] = useState<File[]>([])
-
-  // View certificates dialog state
-  const [viewCertificatesOpen, setViewCertificatesOpen] = useState(false)
+  // View supplier details dialog
+  const [viewDialogOpen, setViewDialogOpen] = useState(false)
   const [viewingSupplier, setViewingSupplier] = useState<Supplier | null>(null)
+  const [certificates, setCertificates] = useState<Certificate[]>([])
+  const [loadingCerts, setLoadingCerts] = useState(false)
+
+  // Add certificate dialog
+  const [addCertDialogOpen, setAddCertDialogOpen] = useState(false)
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [uploadingCert, setUploadingCert] = useState(false)
+  const [certFormData, setCertFormData] = useState({
+    validSince: '',
+    validUntil: '',
+  })
 
   useEffect(() => {
     fetchSuppliers()
@@ -86,6 +95,25 @@ export function SuppliersPage() {
     }
   }
 
+  const fetchCertificates = async (supplierId: string) => {
+    try {
+      setLoadingCerts(true)
+      const { data, error } = await supabase
+        .from('supplier_certificates')
+        .select('*')
+        .eq('supplier_id', supplierId)
+        .order('valid_until', { ascending: true })
+
+      if (error) throw error
+      setCertificates(data || [])
+    } catch (error) {
+      console.error('Error fetching certificates:', error)
+      toast.error('Failed to load certificates')
+    } finally {
+      setLoadingCerts(false)
+    }
+  }
+
   const handleOpenDialog = (supplier?: Supplier) => {
     if (supplier) {
       setEditingSupplier(supplier)
@@ -95,9 +123,6 @@ export function SuppliersPage() {
         email: supplier.email || '',
         phone: supplier.phone || '',
       })
-      // Load existing certificates
-      const existingCerts = supplier.certificates as any
-      setCertificates(Array.isArray(existingCerts) ? existingCerts : [])
     } else {
       setEditingSupplier(null)
       setFormData({
@@ -106,115 +131,30 @@ export function SuppliersPage() {
         email: '',
         phone: '',
       })
-      setCertificates([])
     }
-    setSelectedFiles([])
     setIsDialogOpen(true)
   }
 
   const handleCloseDialog = () => {
     setIsDialogOpen(false)
     setEditingSupplier(null)
-    setSelectedFiles([])
-  }
-
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || [])
-    const pdfFiles = files.filter(f => f.type === 'application/pdf')
-
-    if (pdfFiles.length !== files.length) {
-      toast.error('Only PDF files are allowed')
-    }
-
-    setSelectedFiles(prev => [...prev, ...pdfFiles])
-  }
-
-  const handleRemoveSelectedFile = (index: number) => {
-    setSelectedFiles(prev => prev.filter((_, i) => i !== index))
-  }
-
-  const handleDeleteCertificate = async (cert: { title: string; url: string }) => {
-    if (!confirm(`Delete certificate "${cert.title}"?`)) return
-
-    try {
-      // Extract file path from URL
-      const urlParts = cert.url.split('/certificates/')
-      if (urlParts.length === 2) {
-        const filePath = urlParts[1]
-        const { error } = await supabase.storage.from('certificates').remove([filePath])
-        if (error) throw error
-      }
-
-      setCertificates(prev => prev.filter(c => c.url !== cert.url))
-      toast.success(`Deleted certificate "${cert.title}"`)
-    } catch (error) {
-      console.error('Error deleting certificate:', error)
-      toast.error('Failed to delete certificate')
-    }
-  }
-
-  const uploadCertificates = async (supplierId: string, supplierName: string) => {
-    if (selectedFiles.length === 0) return []
-
-    setUploadingFiles(true)
-    const uploadedCerts: Array<{ title: string; url: string }> = []
-
-    try {
-      for (const file of selectedFiles) {
-        const fileExt = file.name.split('.').pop()
-        const fileName = `${supplierId}/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`
-
-        const { error: uploadError } = await supabase.storage
-          .from('certificates')
-          .upload(fileName, file)
-
-        if (uploadError) throw uploadError
-
-        const { data: { publicUrl } } = supabase.storage
-          .from('certificates')
-          .getPublicUrl(fileName)
-
-        uploadedCerts.push({
-          title: file.name,
-          url: publicUrl
-        })
-      }
-
-      toast.success(`Uploaded ${uploadedCerts.length} certificate(s)`)
-      return uploadedCerts
-    } catch (error) {
-      console.error('Error uploading certificates:', error)
-      toast.error('Failed to upload some certificates')
-      return uploadedCerts
-    } finally {
-      setUploadingFiles(false)
-    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
     if (!formData.name) {
-      toast.error('Please enter supplier name')
+      toast.error('Please enter a supplier name')
       return
     }
 
     try {
-      let supplierId: string
-
       if (editingSupplier) {
-        supplierId = editingSupplier.id
-
-        // Upload new certificates if any
-        const newCerts = await uploadCertificates(supplierId, formData.name)
-        const allCerts = [...certificates, ...newCerts]
-
         const updateData: SupplierUpdate = {
           name: formData.name,
           contact: formData.contact || null,
           email: formData.email || null,
           phone: formData.phone || null,
-          certificates: allCerts as any,
         }
 
         const { error } = await supabase
@@ -225,7 +165,6 @@ export function SuppliersPage() {
         if (error) throw error
         toast.success(`Successfully updated supplier "${formData.name}"`)
       } else {
-        // Create supplier first
         const insertData: SupplierInsert = {
           name: formData.name,
           contact: formData.contact || null,
@@ -233,28 +172,9 @@ export function SuppliersPage() {
           phone: formData.phone || null,
         }
 
-        const { data, error } = await supabase
-          .from('suppliers')
-          .insert(insertData)
-          .select()
-          .single()
+        const { error } = await supabase.from('suppliers').insert(insertData)
 
         if (error) throw error
-        supplierId = data.id
-
-        // Upload certificates
-        const newCerts = await uploadCertificates(supplierId, formData.name)
-
-        if (newCerts.length > 0) {
-          // Update supplier with certificates
-          const { error: updateError } = await supabase
-            .from('suppliers')
-            .update({ certificates: newCerts as any })
-            .eq('id', supplierId)
-
-          if (updateError) throw updateError
-        }
-
         toast.success(`Successfully added supplier "${formData.name}"`)
       }
 
@@ -267,15 +187,12 @@ export function SuppliersPage() {
   }
 
   const handleDelete = async (id: string, name: string) => {
-    if (!confirm(`Delete supplier "${name}"? This will not affect existing products.`)) {
+    if (!confirm(`Are you sure you want to delete supplier "${name}"?`)) {
       return
     }
 
     try {
-      const { error } = await supabase
-        .from('suppliers')
-        .delete()
-        .eq('id', id)
+      const { error } = await supabase.from('suppliers').delete().eq('id', id)
 
       if (error) throw error
       toast.success(`Successfully deleted supplier "${name}"`)
@@ -286,21 +203,144 @@ export function SuppliersPage() {
     }
   }
 
-  const handleViewCertificates = (supplier: Supplier) => {
+  const handleViewSupplier = (supplier: Supplier) => {
     setViewingSupplier(supplier)
-    setViewCertificatesOpen(true)
+    setViewDialogOpen(true)
+    fetchCertificates(supplier.id)
   }
 
-  const handleDownloadCertificate = (url: string, title: string) => {
-    window.open(url, '_blank')
+  const handleOpenAddCertDialog = () => {
+    setSelectedFile(null)
+    setCertFormData({
+      validSince: '',
+      validUntil: '',
+    })
+    setAddCertDialogOpen(true)
+  }
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      if (file.type !== 'application/pdf') {
+        toast.error('Only PDF files are allowed')
+        return
+      }
+      setSelectedFile(file)
+    }
+  }
+
+  const handleAddCertificate = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    if (!selectedFile) {
+      toast.error('Please select a file')
+      return
+    }
+
+    if (!certFormData.validSince || !certFormData.validUntil) {
+      toast.error('Please enter both validity dates')
+      return
+    }
+
+    if (new Date(certFormData.validSince) > new Date(certFormData.validUntil)) {
+      toast.error('Valid since date must be before valid until date')
+      return
+    }
+
+    if (!viewingSupplier) return
+
+    try {
+      setUploadingCert(true)
+
+      // Upload file to storage
+      const fileName = `suppliers/${viewingSupplier.id}/${Date.now()}-${selectedFile.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`
+      const { error: uploadError } = await supabase.storage
+        .from('certificates')
+        .upload(fileName, selectedFile)
+
+      if (uploadError) throw uploadError
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('certificates')
+        .getPublicUrl(fileName)
+
+      // Save certificate record
+      const certData: CertificateInsert = {
+        supplier_id: viewingSupplier.id,
+        file_name: selectedFile.name,
+        file_url: publicUrl,
+        valid_since: certFormData.validSince,
+        valid_until: certFormData.validUntil,
+      }
+
+      const { error: dbError } = await supabase
+        .from('supplier_certificates')
+        .insert(certData)
+
+      if (dbError) throw dbError
+
+      toast.success('Certificate added successfully')
+      setAddCertDialogOpen(false)
+      fetchCertificates(viewingSupplier.id)
+    } catch (error) {
+      console.error('Error adding certificate:', error)
+      toast.error('Failed to add certificate')
+    } finally {
+      setUploadingCert(false)
+    }
+  }
+
+  const handleDeleteCertificate = async (certId: string, fileName: string) => {
+    if (!confirm(`Delete certificate "${fileName}"?`)) return
+
+    try {
+      const { error } = await supabase
+        .from('supplier_certificates')
+        .delete()
+        .eq('id', certId)
+
+      if (error) throw error
+      toast.success('Certificate deleted successfully')
+      if (viewingSupplier) {
+        fetchCertificates(viewingSupplier.id)
+      }
+    } catch (error) {
+      console.error('Error deleting certificate:', error)
+      toast.error('Failed to delete certificate')
+    }
+  }
+
+  const calculateDaysRemaining = (validUntil: string): number => {
+    const today = new Date()
+    const expiryDate = new Date(validUntil)
+    const diffTime = expiryDate.getTime() - today.getTime()
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+    return diffDays
+  }
+
+  const getDaysRemainingColor = (days: number): string => {
+    if (days < 0) return 'text-red-600 font-bold' // Expired
+    if (days <= 30) return 'text-orange-600 font-semibold' // Expiring soon
+    if (days <= 90) return 'text-yellow-600' // Warning
+    return 'text-green-600' // Good
+  }
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    })
   }
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Suppliers</h1>
-          <p className="text-muted-foreground">Manage supplier information and contacts</p>
+          <p className="text-muted-foreground">Manage supplier information and certificates</p>
         </div>
         <Button onClick={() => handleOpenDialog()}>
           <Plus className="mr-2 h-4 w-4" />
@@ -308,6 +348,7 @@ export function SuppliersPage() {
         </Button>
       </div>
 
+      {/* Search */}
       <div className="flex items-center gap-4">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -323,6 +364,7 @@ export function SuppliersPage() {
         </div>
       </div>
 
+      {/* Table */}
       <Card>
         <div className="overflow-auto max-h-[calc(100vh-280px)]">
           <Table>
@@ -332,87 +374,78 @@ export function SuppliersPage() {
                 <TableHead>Contact Person</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Phone</TableHead>
-                <TableHead>Certificates</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
                     Loading...
                   </TableCell>
                 </TableRow>
               ) : filteredSuppliers.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
                     {searchTerm ? 'No suppliers found' : 'No suppliers yet'}
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredSuppliers.map((supplier) => {
-                  const certs = Array.isArray(supplier.certificates) ? supplier.certificates : []
-                  return (
-                    <TableRow key={supplier.id}>
-                      <TableCell className="font-medium">{supplier.name}</TableCell>
-                      <TableCell>{supplier.contact || '-'}</TableCell>
-                      <TableCell>
-                        {supplier.email ? (
-                          <a href={`mailto:${supplier.email}`} className="inline-flex items-center gap-1 text-primary hover:underline">
-                            <Mail className="h-3 w-3" />
-                            {supplier.email}
-                          </a>
-                        ) : '-'}
-                      </TableCell>
-                      <TableCell>
-                        {supplier.phone ? (
-                          <a href={`tel:${supplier.phone}`} className="inline-flex items-center gap-1 text-primary hover:underline">
-                            <Phone className="h-3 w-3" />
-                            {supplier.phone}
-                          </a>
-                        ) : '-'}
-                      </TableCell>
-                      <TableCell>
-                        {certs.length > 0 ? (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleViewCertificates(supplier)}
-                          >
-                            <Eye className="h-4 w-4 mr-2" />
-                            View ({certs.length})
-                          </Button>
-                        ) : (
-                          <span className="text-muted-foreground text-sm">None</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleOpenDialog(supplier)}
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDelete(supplier.id, supplier.name)}
-                          >
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  )
-                })
+                filteredSuppliers.map((supplier) => (
+                  <TableRow key={supplier.id}>
+                    <TableCell className="font-medium">{supplier.name}</TableCell>
+                    <TableCell>{supplier.contact || '-'}</TableCell>
+                    <TableCell>
+                      {supplier.email ? (
+                        <a href={`mailto:${supplier.email}`} className="inline-flex items-center gap-1 text-primary hover:underline">
+                          <Mail className="h-3 w-3" />
+                          {supplier.email}
+                        </a>
+                      ) : '-'}
+                    </TableCell>
+                    <TableCell>
+                      {supplier.phone ? (
+                        <a href={`tel:${supplier.phone}`} className="inline-flex items-center gap-1 text-primary hover:underline">
+                          <Phone className="h-3 w-3" />
+                          {supplier.phone}
+                        </a>
+                      ) : '-'}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleViewSupplier(supplier)}
+                        >
+                          <Eye className="h-4 w-4 mr-1" />
+                          View
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleOpenDialog(supplier)}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDelete(supplier.id, supplier.name)}
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
               )}
             </TableBody>
           </Table>
         </div>
       </Card>
 
+      {/* Add/Edit Supplier Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -426,7 +459,7 @@ export function SuppliersPage() {
               <Input
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="Company name"
+                placeholder="e.g., Acme Packaging Ltd"
                 required
               />
             </div>
@@ -435,187 +468,221 @@ export function SuppliersPage() {
               <Input
                 value={formData.contact}
                 onChange={(e) => setFormData({ ...formData, contact: e.target.value })}
-                placeholder="Contact name"
+                placeholder="e.g., John Smith"
               />
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium">Email</label>
-                <Input
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  placeholder="email@example.com"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium">Phone</label>
-                <Input
-                  type="tel"
-                  value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  placeholder="+1234567890"
-                />
-              </div>
+            <div>
+              <label className="text-sm font-medium">Email</label>
+              <Input
+                type="email"
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                placeholder="e.g., john@acmepackaging.com"
+              />
             </div>
-
-            {/* Certificates Section */}
-            <div className="space-y-3">
-              <label className="text-sm font-medium">Certificates (PDF)</label>
-
-              {/* File Upload */}
-              <div className="border-2 border-dashed rounded-lg p-4 hover:border-primary/50 transition-colors"
-                   style={{ borderColor: 'hsl(var(--border))' }}>
-                <label htmlFor="file-upload" className="cursor-pointer flex flex-col items-center gap-2">
-                  <Upload className="h-8 w-8" style={{ color: 'hsl(var(--muted-foreground))' }} />
-                  <span className="text-sm" style={{ color: 'hsl(var(--foreground))' }}>
-                    Click to upload or drag and drop
-                  </span>
-                  <span className="text-xs" style={{ color: 'hsl(var(--muted-foreground))' }}>
-                    PDF files only
-                  </span>
-                </label>
-                <input
-                  id="file-upload"
-                  type="file"
-                  multiple
-                  accept=".pdf,application/pdf"
-                  onChange={handleFileSelect}
-                  className="hidden"
-                />
-              </div>
-
-              {/* Selected Files (to be uploaded) */}
-              {selectedFiles.length > 0 && (
-                <div className="space-y-2">
-                  <p className="text-xs" style={{ color: 'hsl(var(--muted-foreground))' }}>Ready to upload:</p>
-                  {selectedFiles.map((file, index) => (
-                    <div key={index} className="flex items-center justify-between p-2 rounded border"
-                         style={{ backgroundColor: 'hsl(var(--muted))', borderColor: 'hsl(var(--border))' }}>
-                      <div className="flex items-center gap-2">
-                        <FileCheck className="h-4 w-4" style={{ color: 'hsl(var(--primary))' }} />
-                        <span className="text-sm" style={{ color: 'hsl(var(--foreground))' }}>{file.name}</span>
-                        <span className="text-xs" style={{ color: 'hsl(var(--muted-foreground))' }}>
-                          ({(file.size / 1024).toFixed(1)} KB)
-                        </span>
-                      </div>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleRemoveSelectedFile(index)}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Existing Certificates */}
-              {certificates.length > 0 && (
-                <div className="space-y-2">
-                  <p className="text-xs" style={{ color: 'hsl(var(--muted-foreground))' }}>Uploaded certificates:</p>
-                  {certificates.map((cert, index) => (
-                    <div key={index} className="flex items-center justify-between p-2 rounded border"
-                         style={{ backgroundColor: 'hsl(var(--muted))', borderColor: 'hsl(var(--border))' }}>
-                      <div className="flex items-center gap-2">
-                        <FileCheck className="h-4 w-4" style={{ color: 'hsl(var(--primary))' }} />
-                        <span className="text-sm" style={{ color: 'hsl(var(--foreground))' }}>{cert.title}</span>
-                      </div>
-                      <div className="flex gap-1">
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => window.open(cert.url, '_blank')}
-                        >
-                          <Download className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDeleteCertificate(cert)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+            <div>
+              <label className="text-sm font-medium">Phone</label>
+              <Input
+                value={formData.phone}
+                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                placeholder="e.g., +1 234 567 8900"
+              />
             </div>
-
             <DialogFooter>
               <Button type="button" variant="outline" onClick={handleCloseDialog}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={uploadingFiles}>
-                {uploadingFiles ? 'Uploading...' : editingSupplier ? 'Update' : 'Add'} Supplier
+              <Button type="submit">
+                {editingSupplier ? 'Update' : 'Add'} Supplier
               </Button>
             </DialogFooter>
           </form>
         </DialogContent>
       </Dialog>
 
-      {/* View Certificates Dialog */}
-      <Dialog open={viewCertificatesOpen} onOpenChange={setViewCertificatesOpen}>
-        <DialogContent onClose={() => setViewCertificatesOpen(false)}>
+      {/* View Supplier Details Dialog */}
+      <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>
-              Certificates - {viewingSupplier?.name}
-            </DialogTitle>
+            <DialogTitle>Supplier Details</DialogTitle>
           </DialogHeader>
 
-          <div className="space-y-3">
-            {viewingSupplier && Array.isArray(viewingSupplier.certificates) && viewingSupplier.certificates.length > 0 ? (
-              (viewingSupplier.certificates as Array<{ title: string; url: string }>).map((cert, index) => (
-                <div
-                  key={index}
-                  className="flex items-center justify-between p-3 rounded border"
-                  style={{ backgroundColor: 'hsl(var(--muted))', borderColor: 'hsl(var(--border))' }}
-                >
-                  <div className="flex items-center gap-3">
-                    <FileCheck className="h-5 w-5" style={{ color: 'hsl(var(--primary))' }} />
-                    <div>
-                      <p className="text-sm font-medium" style={{ color: 'hsl(var(--foreground))' }}>
-                        {cert.title}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => window.open(cert.url, '_blank')}
-                    >
-                      <Eye className="h-4 w-4 mr-2" />
-                      View
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleDownloadCertificate(cert.url, cert.title)}
-                    >
-                      <Download className="h-4 w-4 mr-2" />
-                      Download
-                    </Button>
-                  </div>
+          {viewingSupplier && (
+            <div className="space-y-6">
+              {/* Supplier Info Header */}
+              <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
+                <div>
+                  <p className="text-sm text-gray-600">Supplier Name</p>
+                  <p className="font-semibold text-lg">{viewingSupplier.name}</p>
                 </div>
-              ))
-            ) : (
-              <div className="text-center py-8">
-                <p className="text-muted-foreground">No certificates available</p>
+                <div>
+                  <p className="text-sm text-gray-600">Contact Person</p>
+                  <p className="font-medium">{viewingSupplier.contact || '-'}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Email</p>
+                  <p className="font-medium">
+                    {viewingSupplier.email ? (
+                      <a href={`mailto:${viewingSupplier.email}`} className="text-primary hover:underline">
+                        {viewingSupplier.email}
+                      </a>
+                    ) : '-'}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Phone</p>
+                  <p className="font-medium">
+                    {viewingSupplier.phone ? (
+                      <a href={`tel:${viewingSupplier.phone}`} className="text-primary hover:underline">
+                        {viewingSupplier.phone}
+                      </a>
+                    ) : '-'}
+                  </p>
+                </div>
               </div>
-            )}
-          </div>
+
+              {/* Certificates Section */}
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold">Certificates</h3>
+                  <Button onClick={handleOpenAddCertDialog} size="sm">
+                    <Plus className="h-4 w-4 mr-1" />
+                    Add Certificate
+                  </Button>
+                </div>
+
+                {loadingCerts ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    Loading certificates...
+                  </div>
+                ) : certificates.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground border rounded-lg">
+                    No certificates uploaded yet
+                  </div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Certificate Name</TableHead>
+                        <TableHead>Valid Since</TableHead>
+                        <TableHead>Valid Until</TableHead>
+                        <TableHead>Days Remaining</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {certificates.map((cert) => {
+                        const daysRemaining = calculateDaysRemaining(cert.valid_until)
+                        return (
+                          <TableRow key={cert.id}>
+                            <TableCell className="font-medium">{cert.file_name}</TableCell>
+                            <TableCell>{formatDate(cert.valid_since)}</TableCell>
+                            <TableCell>{formatDate(cert.valid_until)}</TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                {daysRemaining < 0 && (
+                                  <AlertCircle className="h-4 w-4 text-red-600" />
+                                )}
+                                <span className={getDaysRemainingColor(daysRemaining)}>
+                                  {daysRemaining < 0
+                                    ? `Expired ${Math.abs(daysRemaining)} days ago`
+                                    : `${daysRemaining} days`}
+                                </span>
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex items-center justify-end gap-2">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => window.open(cert.file_url, '_blank')}
+                                >
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleDeleteCertificate(cert.id, cert.file_name)}
+                                >
+                                  <Trash2 className="h-4 w-4 text-destructive" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        )
+                      })}
+                    </TableBody>
+                  </Table>
+                )}
+              </div>
+            </div>
+          )}
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setViewCertificatesOpen(false)}>
+            <Button variant="outline" onClick={() => setViewDialogOpen(false)}>
               Close
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Certificate Dialog */}
+      <Dialog open={addCertDialogOpen} onOpenChange={setAddCertDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add Certificate</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleAddCertificate} className="space-y-4">
+            <div>
+              <label className="text-sm font-medium mb-2 block">Certificate File (PDF) *</label>
+              <div className="border-2 border-dashed rounded-lg p-4 hover:border-primary/50 transition-colors cursor-pointer">
+                <label htmlFor="cert-file-upload" className="cursor-pointer flex flex-col items-center gap-2">
+                  <Calendar className="h-8 w-8 text-gray-400" />
+                  <span className="text-sm text-gray-700">
+                    {selectedFile ? selectedFile.name : 'Click to upload certificate PDF'}
+                  </span>
+                  <span className="text-xs text-gray-500">PDF files only</span>
+                </label>
+                <input
+                  id="cert-file-upload"
+                  type="file"
+                  accept=".pdf,application/pdf"
+                  onChange={handleFileSelect}
+                  className="hidden"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium">Valid Since *</label>
+                <Input
+                  type="date"
+                  value={certFormData.validSince}
+                  onChange={(e) => setCertFormData({ ...certFormData, validSince: e.target.value })}
+                  required
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium">Valid Until *</label>
+                <Input
+                  type="date"
+                  value={certFormData.validUntil}
+                  onChange={(e) => setCertFormData({ ...certFormData, validUntil: e.target.value })}
+                  required
+                />
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setAddCertDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={uploadingCert}>
+                {uploadingCert ? 'Uploading...' : 'Add Certificate'}
+              </Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
     </div>

@@ -155,6 +155,38 @@ export interface Database {
           updated_at?: string
         }
       }
+      supplier_certificates: {
+        Row: {
+          id: string
+          supplier_id: string
+          file_name: string
+          file_url: string
+          valid_since: string
+          valid_until: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          supplier_id: string
+          file_name: string
+          file_url: string
+          valid_since: string
+          valid_until: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          supplier_id?: string
+          file_name?: string
+          file_url?: string
+          valid_since?: string
+          valid_until?: string
+          created_at?: string
+          updated_at?: string
+        }
+      }
       sds_chemicals: {
         Row: {
           id: string
