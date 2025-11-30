@@ -287,22 +287,18 @@ export function OrderFormsPage() {
           {filteredForms.map((form) => (
             <Card
               key={form.id}
-              className="p-6 hover:shadow-lg transition-shadow"
-              style={{
-                backgroundColor: 'hsl(var(--card))',
-                borderColor: 'hsl(var(--border))'
-              }}
+              className="p-6 hover:shadow-lg transition-shadow bg-white dark:bg-gray-900 border"
             >
               <div className="space-y-4">
                 {/* Form Title */}
                 <div>
-                  <h3 className="font-semibold text-lg line-clamp-2" style={{ color: 'hsl(var(--card-foreground))' }}>
+                  <h3 className="font-semibold text-lg line-clamp-2 text-gray-900 dark:text-gray-100">
                     {form.title}
                   </h3>
                 </div>
 
                 {/* Stats */}
-                <div className="flex items-center gap-4 text-sm" style={{ color: 'hsl(var(--muted-foreground))' }}>
+                <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
                   <div className="flex items-center gap-1">
                     <Package className="h-4 w-4" />
                     <span>{form.item_ids.length} product{form.item_ids.length !== 1 ? 's' : ''}</span>
@@ -310,21 +306,17 @@ export function OrderFormsPage() {
                 </div>
 
                 {/* Date */}
-                <div className="text-xs" style={{ color: 'hsl(var(--muted-foreground))' }}>
+                <div className="text-xs text-gray-500 dark:text-gray-400">
                   Created {formatDate(form.created_at)}
                 </div>
 
                 {/* Actions */}
-                <div className="flex flex-col gap-2 pt-2 border-t" style={{ borderColor: 'hsl(var(--border))' }}>
+                <div className="flex flex-col gap-2 pt-2 border-t border-gray-200 dark:border-gray-700">
                   <Button
                     variant="default"
                     size="sm"
                     onClick={() => handleOpenUseFormDialog(form)}
-                    className="w-full font-semibold"
-                    style={{
-                      backgroundColor: 'hsl(var(--primary))',
-                      color: 'hsl(var(--primary-foreground))'
-                    }}
+                    className="w-full font-semibold bg-[#6D9197] hover:bg-[#5a7d82] text-white"
                   >
                     <FileCheck className="h-4 w-4 mr-2" />
                     Use Form
@@ -389,15 +381,11 @@ export function OrderFormsPage() {
                   const selectedCount = categoryProducts.filter((p) => p.selected).length
 
                   return (
-                    <div key={category} className="border-b last:border-b-0" style={{ borderColor: 'hsl(var(--border))' }}>
+                    <div key={category} className="border-b last:border-b-0 border-gray-200 dark:border-gray-700">
                       <button
                         type="button"
                         onClick={() => toggleCategory(category)}
-                        className="w-full px-4 py-3 font-semibold text-sm flex items-center justify-between hover:opacity-90 transition-opacity"
-                        style={{
-                          backgroundColor: 'hsl(var(--primary))',
-                          color: 'hsl(var(--primary-foreground))'
-                        }}
+                        className="w-full px-4 py-3 font-semibold text-sm flex items-center justify-between hover:opacity-90 transition-opacity bg-[#6D9197] text-white"
                       >
                         <div className="flex items-center gap-2">
                           {isExpanded ? (
@@ -407,22 +395,16 @@ export function OrderFormsPage() {
                           )}
                           <span>{CATEGORY_MAP[category]}</span>
                         </div>
-                        <span className="text-xs px-2 py-1 rounded" style={{ backgroundColor: 'rgba(255, 255, 255, 0.2)' }}>
+                        <span className="text-xs px-2 py-1 rounded bg-white/20">
                           {selectedCount}/{categoryProducts.length} selected
                         </span>
                       </button>
                       {isExpanded && (
-                        <div className="divide-y" style={{ backgroundColor: 'hsl(var(--muted))' }}>
+                        <div className="divide-y bg-gray-100 dark:bg-gray-800">
                           {categoryProducts.map((product) => (
                             <div
                               key={product.id}
-                              className="flex items-center gap-3 p-3 cursor-pointer"
-                              style={{
-                                backgroundColor: 'hsl(var(--muted))',
-                                borderColor: 'hsl(var(--border))'
-                              }}
-                              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'hsl(var(--card))'}
-                              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'hsl(var(--muted))'}
+                              className="flex items-center gap-3 p-3 cursor-pointer bg-gray-100 dark:bg-gray-800 hover:bg-white dark:hover:bg-gray-900 border-gray-200 dark:border-gray-700 transition-colors"
                               onClick={() => toggleProductSelection(product.id)}
                             >
                               <input
@@ -432,14 +414,14 @@ export function OrderFormsPage() {
                                 className="h-4 w-4"
                               />
                               <div className="flex-1">
-                                <div className="font-medium" style={{ color: 'hsl(var(--foreground))' }}>
+                                <div className="font-medium text-gray-900 dark:text-gray-100">
                                   {product.code}
                                 </div>
-                                <div className="text-sm" style={{ color: 'hsl(var(--muted-foreground))' }}>
+                                <div className="text-sm text-gray-600 dark:text-gray-400">
                                   {product.description}
                                 </div>
                               </div>
-                              <div className="text-sm" style={{ color: 'hsl(var(--muted-foreground))' }}>
+                              <div className="text-sm text-gray-600 dark:text-gray-400">
                                 SOH: {product.soh}
                               </div>
                             </div>
