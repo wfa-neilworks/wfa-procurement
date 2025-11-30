@@ -287,18 +287,18 @@ export function OrderFormsPage() {
           {filteredForms.map((form) => (
             <Card
               key={form.id}
-              className="p-6 hover:shadow-lg transition-shadow bg-white dark:bg-gray-900 border"
+              className="p-6 hover:shadow-lg transition-shadow"
             >
               <div className="space-y-4">
                 {/* Form Title */}
                 <div>
-                  <h3 className="font-semibold text-lg line-clamp-2 text-gray-900 dark:text-gray-100">
+                  <h3 className="font-semibold text-lg line-clamp-2">
                     {form.title}
                   </h3>
                 </div>
 
                 {/* Stats */}
-                <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
+                <div className="flex items-center gap-4 text-sm text-muted-foreground">
                   <div className="flex items-center gap-1">
                     <Package className="h-4 w-4" />
                     <span>{form.item_ids.length} product{form.item_ids.length !== 1 ? 's' : ''}</span>
@@ -306,17 +306,17 @@ export function OrderFormsPage() {
                 </div>
 
                 {/* Date */}
-                <div className="text-xs text-gray-500 dark:text-gray-400">
+                <div className="text-xs text-muted-foreground">
                   Created {formatDate(form.created_at)}
                 </div>
 
                 {/* Actions */}
-                <div className="flex flex-col gap-2 pt-2 border-t border-gray-200 dark:border-gray-700">
+                <div className="flex flex-col gap-2 pt-2 border-t">
                   <Button
                     variant="default"
                     size="sm"
                     onClick={() => handleOpenUseFormDialog(form)}
-                    className="w-full font-semibold bg-[#6D9197] hover:bg-[#5a7d82] text-white"
+                    className="w-full font-semibold"
                   >
                     <FileCheck className="h-4 w-4 mr-2" />
                     Use Form
@@ -335,7 +335,7 @@ export function OrderFormsPage() {
                       variant="outline"
                       size="sm"
                       onClick={() => handleDelete(form.id, form.title)}
-                      className="flex-1 text-red-600 border-red-300 hover:border-red-400 hover:bg-red-50"
+                      className="flex-1 text-red-600 border-red-300 hover:border-red-400 hover:bg-red-50 dark:text-red-400 dark:border-red-800 dark:hover:border-red-700 dark:hover:bg-red-950"
                     >
                       <Trash2 className="h-4 w-4 mr-1" />
                       Delete
