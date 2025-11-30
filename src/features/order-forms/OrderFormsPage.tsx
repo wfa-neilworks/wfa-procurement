@@ -285,15 +285,24 @@ export function OrderFormsPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {filteredForms.map((form) => (
-            <Card key={form.id} className="p-6 hover:shadow-lg transition-shadow">
+            <Card
+              key={form.id}
+              className="p-6 hover:shadow-lg transition-shadow"
+              style={{
+                backgroundColor: 'hsl(var(--card))',
+                borderColor: 'hsl(var(--border))'
+              }}
+            >
               <div className="space-y-4">
                 {/* Form Title */}
                 <div>
-                  <h3 className="font-semibold text-lg line-clamp-2">{form.title}</h3>
+                  <h3 className="font-semibold text-lg line-clamp-2" style={{ color: 'hsl(var(--card-foreground))' }}>
+                    {form.title}
+                  </h3>
                 </div>
 
                 {/* Stats */}
-                <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                <div className="flex items-center gap-4 text-sm" style={{ color: 'hsl(var(--muted-foreground))' }}>
                   <div className="flex items-center gap-1">
                     <Package className="h-4 w-4" />
                     <span>{form.item_ids.length} product{form.item_ids.length !== 1 ? 's' : ''}</span>
@@ -301,20 +310,21 @@ export function OrderFormsPage() {
                 </div>
 
                 {/* Date */}
-                <div className="text-xs text-muted-foreground">
+                <div className="text-xs" style={{ color: 'hsl(var(--muted-foreground))' }}>
                   Created {formatDate(form.created_at)}
                 </div>
 
                 {/* Actions */}
-                <div className="flex flex-col gap-2 pt-2 border-t">
+                <div className="flex flex-col gap-2 pt-2 border-t" style={{ borderColor: 'hsl(var(--border))' }}>
                   <Button
                     variant="default"
                     size="sm"
                     onClick={() => handleOpenUseFormDialog(form)}
-                    className="w-full text-white font-semibold"
-                    style={{ backgroundColor: '#28363D' }}
-                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#2F575D'}
-                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#28363D'}
+                    className="w-full font-semibold"
+                    style={{
+                      backgroundColor: 'hsl(var(--primary))',
+                      color: 'hsl(var(--primary-foreground))'
+                    }}
                   >
                     <FileCheck className="h-4 w-4 mr-2" />
                     Use Form
@@ -324,8 +334,7 @@ export function OrderFormsPage() {
                       variant="outline"
                       size="sm"
                       onClick={() => handleOpenDialog(form)}
-                      className="flex-1 border-2 hover:bg-gray-50 font-medium"
-                      style={{ borderColor: '#28363D', color: '#28363D' }}
+                      className="flex-1"
                     >
                       <Pencil className="h-4 w-4 mr-1" />
                       Edit
@@ -334,7 +343,7 @@ export function OrderFormsPage() {
                       variant="outline"
                       size="sm"
                       onClick={() => handleDelete(form.id, form.title)}
-                      className="flex-1 border-2 border-red-300 hover:border-red-400 hover:bg-red-50 text-red-600 font-medium"
+                      className="flex-1 text-red-600 border-red-300 hover:border-red-400 hover:bg-red-50"
                     >
                       <Trash2 className="h-4 w-4 mr-1" />
                       Delete
@@ -380,12 +389,15 @@ export function OrderFormsPage() {
                   const selectedCount = categoryProducts.filter((p) => p.selected).length
 
                   return (
-                    <div key={category} className="border-b last:border-b-0">
+                    <div key={category} className="border-b last:border-b-0" style={{ borderColor: 'hsl(var(--border))' }}>
                       <button
                         type="button"
                         onClick={() => toggleCategory(category)}
-                        className="w-full px-4 py-3 font-semibold text-white text-sm flex items-center justify-between hover:opacity-90 transition-opacity"
-                        style={{ backgroundColor: '#6D9197' }}
+                        className="w-full px-4 py-3 font-semibold text-sm flex items-center justify-between hover:opacity-90 transition-opacity"
+                        style={{
+                          backgroundColor: 'hsl(var(--primary))',
+                          color: 'hsl(var(--primary-foreground))'
+                        }}
                       >
                         <div className="flex items-center gap-2">
                           {isExpanded ? (
@@ -395,16 +407,22 @@ export function OrderFormsPage() {
                           )}
                           <span>{CATEGORY_MAP[category]}</span>
                         </div>
-                        <span className="text-xs bg-white/20 px-2 py-1 rounded">
+                        <span className="text-xs px-2 py-1 rounded" style={{ backgroundColor: 'rgba(255, 255, 255, 0.2)' }}>
                           {selectedCount}/{categoryProducts.length} selected
                         </span>
                       </button>
                       {isExpanded && (
-                        <div className="divide-y bg-gray-50">
+                        <div className="divide-y" style={{ backgroundColor: 'hsl(var(--muted))' }}>
                           {categoryProducts.map((product) => (
                             <div
                               key={product.id}
-                              className="flex items-center gap-3 p-3 hover:bg-white cursor-pointer"
+                              className="flex items-center gap-3 p-3 cursor-pointer"
+                              style={{
+                                backgroundColor: 'hsl(var(--muted))',
+                                borderColor: 'hsl(var(--border))'
+                              }}
+                              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'hsl(var(--card))'}
+                              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'hsl(var(--muted))'}
                               onClick={() => toggleProductSelection(product.id)}
                             >
                               <input
@@ -414,12 +432,14 @@ export function OrderFormsPage() {
                                 className="h-4 w-4"
                               />
                               <div className="flex-1">
-                                <div className="font-medium">{product.code}</div>
-                                <div className="text-sm text-muted-foreground">
+                                <div className="font-medium" style={{ color: 'hsl(var(--foreground))' }}>
+                                  {product.code}
+                                </div>
+                                <div className="text-sm" style={{ color: 'hsl(var(--muted-foreground))' }}>
                                   {product.description}
                                 </div>
                               </div>
-                              <div className="text-sm text-muted-foreground">
+                              <div className="text-sm" style={{ color: 'hsl(var(--muted-foreground))' }}>
                                 SOH: {product.soh}
                               </div>
                             </div>
