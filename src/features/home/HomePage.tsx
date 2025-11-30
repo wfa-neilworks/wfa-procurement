@@ -2,13 +2,15 @@ import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card'
 import { Button } from '../../components/ui/button'
 import { Input } from '../../components/ui/input'
-import { Plus, X, AlertTriangle, Package, CheckCircle, Clock } from 'lucide-react'
+import { Plus, X, AlertTriangle, Package, CheckCircle, Clock, FileWarning, ExternalLink } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { toast } from 'sonner'
 import type { Database } from '../../types/database'
 import { AddStockDialog } from './AddStockDialog'
 
 type Product = Database['public']['Tables']['products']['Row']
+type Supplier = Database['public']['Tables']['suppliers']['Row']
+type Certificate = Database['public']['Tables']['supplier_certificates']['Row']
 
 interface TodoItem {
   id: string
@@ -16,7 +18,14 @@ interface TodoItem {
   completed: boolean
 }
 
+interface CertificateWithSupplier extends Certificate {
+  supplier: Supplier
+}
+
 export function HomePage() {
+  // Ribbon navigation state
+  const [activeView, setActiveView] = useState<'stock-tasks' | 'certificates'>('stock-tasks')
+
   const [lowStockProducts, setLowStockProducts] = useState<Product[]>([])
   const [selectedStockFilter, setSelectedStockFilter] = useState<'critical' | 'very-low' | 'low' | 'ordered'>('critical')
   const [todos, setTodos] = useState<TodoItem[]>(() => {
@@ -28,8 +37,14 @@ export function HomePage() {
   const [addStockDialogOpen, setAddStockDialogOpen] = useState(false)
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
 
+  // Certificate state
+  const [certificates, setCertificates] = useState<CertificateWithSupplier[]>([])
+  const [certificatesLoading, setCertificatesLoading] = useState(true)
+  const [selectedCertFilter, setSelectedCertFilter] = useState<'all' | 'expired' | 'expiring-soon'>('all')
+
   useEffect(() => {
     fetchLowStockProducts()
+    fetchCertificates()
   }, [])
 
   useEffect(() => {
@@ -166,6 +181,68 @@ export function HomePage() {
     }
   }
 
+  const fetchCertificates = async () => {
+    try {
+      setCertificatesLoading(true)
+      const { data: certData, error } = await supabase
+        .from('supplier_certificates')
+        .select(`
+          *,
+          supplier:suppliers(*)
+        `)
+        .order('valid_until', { ascending: true })
+
+      if (error) throw error
+
+      // Transform the data to match our interface
+      const certificatesWithSupplier: CertificateWithSupplier[] = (certData || []).map(cert => ({
+        ...cert,
+        supplier: Array.isArray(cert.supplier) ? cert.supplier[0] : cert.supplier
+      }))
+
+      setCertificates(certificatesWithSupplier)
+    } catch (error) {
+      console.error('Error fetching certificates:', error)
+      toast.error('Failed to load certificates')
+    } finally {
+      setCertificatesLoading(false)
+    }
+  }
+
+  const calculateDaysRemaining = (validUntil: string): number => {
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const expiryDate = new Date(validUntil)
+    expiryDate.setHours(0, 0, 0, 0)
+    const diffTime = expiryDate.getTime() - today.getTime()
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+    return diffDays
+  }
+
+  const getCertificateStatus = (daysRemaining: number) => {
+    if (daysRemaining < 0) {
+      return {
+        color: 'bg-red-100 text-red-700 border-red-300',
+        label: 'Expired',
+        textColor: 'text-red-700',
+        badge: 'bg-red-600 text-white'
+      }
+    } else if (daysRemaining <= 60) {
+      return {
+        color: 'bg-yellow-100 text-yellow-700 border-yellow-300',
+        label: 'Expiring Soon',
+        textColor: 'text-yellow-700',
+        badge: 'bg-yellow-600 text-white'
+      }
+    }
+    return {
+      color: 'bg-green-100 text-green-700 border-green-300',
+      label: 'Valid',
+      textColor: 'text-green-700',
+      badge: 'bg-green-600 text-white'
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div>
@@ -175,7 +252,38 @@ export function HomePage() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* Ribbon Navigation */}
+      <div className="flex gap-2 border-b">
+        <button
+          onClick={() => setActiveView('stock-tasks')}
+          className={`px-6 py-3 font-semibold text-sm border-b-2 transition-colors ${
+            activeView === 'stock-tasks'
+              ? 'border-[#6D9197] text-[#6D9197]'
+              : 'border-transparent text-gray-600 hover:text-gray-900'
+          }`}
+        >
+          Stock & Tasks
+        </button>
+        <button
+          onClick={() => setActiveView('certificates')}
+          className={`px-6 py-3 font-semibold text-sm border-b-2 transition-colors ${
+            activeView === 'certificates'
+              ? 'border-[#6D9197] text-[#6D9197]'
+              : 'border-transparent text-gray-600 hover:text-gray-900'
+          }`}
+        >
+          Certificate Monitoring
+          {certificates.filter(c => calculateDaysRemaining(c.valid_until) <= 60).length > 0 && (
+            <span className="ml-2 bg-yellow-500 text-white text-xs px-2 py-0.5 rounded-full">
+              {certificates.filter(c => calculateDaysRemaining(c.valid_until) <= 60).length}
+            </span>
+          )}
+        </button>
+      </div>
+
+      {/* Stock & Tasks View */}
+      {activeView === 'stock-tasks' && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Low Stock Products - Left Side */}
         <Card className="h-fit">
           <CardHeader className="pb-3">
@@ -398,7 +506,176 @@ export function HomePage() {
             </div>
           </CardContent>
         </Card>
-      </div>
+        </div>
+      )}
+
+      {/* Certificates View */}
+      {activeView === 'certificates' && (
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <FileWarning className="h-5 w-5 text-orange-500" />
+                <CardTitle>Certificate Expiration Monitoring</CardTitle>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={fetchCertificates}
+              >
+                Refresh
+              </Button>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Track supplier certificates and their expiration dates
+            </p>
+
+            {/* Filter Tabs */}
+            <div className="flex gap-2 mt-4 border-b">
+              <button
+                onClick={() => setSelectedCertFilter('all')}
+                className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                  selectedCertFilter === 'all'
+                    ? 'border-[#6D9197] text-[#6D9197]'
+                    : 'border-transparent text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                All ({certificates.length})
+              </button>
+              <button
+                onClick={() => setSelectedCertFilter('expired')}
+                className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                  selectedCertFilter === 'expired'
+                    ? 'border-red-500 text-red-600'
+                    : 'border-transparent text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                Expired ({certificates.filter(c => calculateDaysRemaining(c.valid_until) < 0).length})
+              </button>
+              <button
+                onClick={() => setSelectedCertFilter('expiring-soon')}
+                className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                  selectedCertFilter === 'expiring-soon'
+                    ? 'border-yellow-500 text-yellow-600'
+                    : 'border-transparent text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                Expiring Soon (≤60 days) ({certificates.filter(c => {
+                  const days = calculateDaysRemaining(c.valid_until)
+                  return days >= 0 && days <= 60
+                }).length})
+              </button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {certificatesLoading ? (
+              <div className="text-center py-8 text-muted-foreground">
+                Loading certificates...
+              </div>
+            ) : certificates.length === 0 ? (
+              <div className="text-center py-8">
+                <FileWarning className="h-12 w-12 text-muted-foreground mx-auto mb-2" />
+                <p className="text-muted-foreground">No certificates found</p>
+              </div>
+            ) : (
+              <div className="space-y-3 max-h-[700px] overflow-y-auto">
+                {certificates
+                  .filter(cert => {
+                    const daysRemaining = calculateDaysRemaining(cert.valid_until)
+                    if (selectedCertFilter === 'expired') return daysRemaining < 0
+                    if (selectedCertFilter === 'expiring-soon') return daysRemaining >= 0 && daysRemaining <= 60
+                    return true
+                  })
+                  .map((cert) => {
+                    const daysRemaining = calculateDaysRemaining(cert.valid_until)
+                    const status = getCertificateStatus(daysRemaining)
+
+                    return (
+                      <div
+                        key={cert.id}
+                        className={`p-4 rounded-lg border-2 ${status.color} transition-all hover:shadow-md`}
+                      >
+                        <div className="flex items-start justify-between gap-4">
+                          {/* Left side - Certificate info */}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-2">
+                              <h3 className="font-semibold text-base truncate">
+                                {cert.supplier?.name || 'Unknown Supplier'}
+                              </h3>
+                              <span className={`px-2 py-0.5 rounded text-xs font-semibold ${status.badge}`}>
+                                {status.label}
+                              </span>
+                            </div>
+
+                            <div className="text-sm text-gray-700 mb-1">
+                              <span className="font-medium">Certificate:</span> {cert.file_name}
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-2 text-xs text-gray-600 mt-2">
+                              <div>
+                                <span className="font-medium">Valid Since:</span>{' '}
+                                {new Date(cert.valid_since).toLocaleDateString('en-US', {
+                                  year: 'numeric',
+                                  month: 'short',
+                                  day: 'numeric'
+                                })}
+                              </div>
+                              <div>
+                                <span className="font-medium">Valid Until:</span>{' '}
+                                {new Date(cert.valid_until).toLocaleDateString('en-US', {
+                                  year: 'numeric',
+                                  month: 'short',
+                                  day: 'numeric'
+                                })}
+                              </div>
+                            </div>
+
+                            {/* Contact info if available */}
+                            {(cert.supplier?.email || cert.supplier?.phone) && (
+                              <div className="text-xs text-gray-600 mt-2 pt-2 border-t border-gray-300">
+                                {cert.supplier.contact && (
+                                  <div>Contact: {cert.supplier.contact}</div>
+                                )}
+                                {cert.supplier.email && (
+                                  <div>Email: {cert.supplier.email}</div>
+                                )}
+                                {cert.supplier.phone && (
+                                  <div>Phone: {cert.supplier.phone}</div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Right side - Days remaining and action */}
+                          <div className="flex flex-col items-end gap-2">
+                            <div className={`text-center px-4 py-2 rounded-lg bg-white/50`}>
+                              <div className={`text-2xl font-bold ${status.textColor}`}>
+                                {daysRemaining < 0 ? Math.abs(daysRemaining) : daysRemaining}
+                              </div>
+                              <div className="text-xs text-gray-600">
+                                {daysRemaining < 0 ? 'days ago' : 'days left'}
+                              </div>
+                            </div>
+
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => window.open(cert.file_url, '_blank')}
+                              className="text-xs"
+                            >
+                              <ExternalLink className="h-3 w-3 mr-1" />
+                              View Certificate
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Add Stock Dialog */}
       {selectedProduct && (
