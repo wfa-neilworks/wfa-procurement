@@ -41,6 +41,8 @@ export function SDSPage() {
     name: '',
     location: '',
     pdf_url: '',
+    valid_since: '',
+    valid_until: '',
   })
 
   // File upload state
@@ -91,6 +93,8 @@ export function SDSPage() {
         name: chemical.name,
         location: chemical.location,
         pdf_url: chemical.pdf_url || '',
+        valid_since: chemical.valid_since || '',
+        valid_until: chemical.valid_until || '',
       })
     } else {
       setEditingChemical(null)
@@ -98,6 +102,8 @@ export function SDSPage() {
         name: '',
         location: '',
         pdf_url: '',
+        valid_since: '',
+        valid_until: '',
       })
     }
     setSelectedFile(null)
@@ -181,6 +187,8 @@ export function SDSPage() {
           name: formData.name,
           location: formData.location,
           pdf_url: pdfUrl || null,
+          valid_since: formData.valid_since || null,
+          valid_until: formData.valid_until || null,
         }
 
         const { error } = await supabase
@@ -195,6 +203,8 @@ export function SDSPage() {
         const insertData: SDSChemicalInsert = {
           name: formData.name,
           location: formData.location,
+          valid_since: formData.valid_since || null,
+          valid_until: formData.valid_until || null,
         }
 
         const { data, error } = await supabase
@@ -393,6 +403,26 @@ export function SDSPage() {
                 placeholder="e.g., Chemical Storage Room A, Shelf 3"
                 required
               />
+            </div>
+
+            {/* Validity Dates */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium">Valid Since</label>
+                <Input
+                  type="date"
+                  value={formData.valid_since}
+                  onChange={(e) => setFormData({ ...formData, valid_since: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium">Valid Until</label>
+                <Input
+                  type="date"
+                  value={formData.valid_until}
+                  onChange={(e) => setFormData({ ...formData, valid_until: e.target.value })}
+                />
+              </div>
             </div>
 
             {/* SDS Document Upload Section */}

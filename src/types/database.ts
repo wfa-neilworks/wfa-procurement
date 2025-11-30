@@ -193,6 +193,8 @@ export interface Database {
           name: string
           location: string
           pdf_url: string | null
+          valid_since: string | null
+          valid_until: string | null
           created_at: string
           updated_at: string
         }
@@ -201,6 +203,8 @@ export interface Database {
           name: string
           location: string
           pdf_url?: string | null
+          valid_since?: string | null
+          valid_until?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -209,6 +213,8 @@ export interface Database {
           name?: string
           location?: string
           pdf_url?: string | null
+          valid_since?: string | null
+          valid_until?: string | null
           created_at?: string
           updated_at?: string
         }

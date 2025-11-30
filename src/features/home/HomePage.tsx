@@ -11,6 +11,7 @@ import { AddStockDialog } from './AddStockDialog'
 type Product = Database['public']['Tables']['products']['Row']
 type Supplier = Database['public']['Tables']['suppliers']['Row']
 type Certificate = Database['public']['Tables']['supplier_certificates']['Row']
+type SDSChemical = Database['public']['Tables']['sds_chemicals']['Row']
 
 interface TodoItem {
   id: string
@@ -24,7 +25,7 @@ interface CertificateWithSupplier extends Certificate {
 
 export function HomePage() {
   // Ribbon navigation state
-  const [activeView, setActiveView] = useState<'stock-tasks' | 'certificates'>('stock-tasks')
+  const [activeView, setActiveView] = useState<'stock-tasks' | 'certificates' | 'chemicals'>('stock-tasks')
 
   const [lowStockProducts, setLowStockProducts] = useState<Product[]>([])
   const [selectedStockFilter, setSelectedStockFilter] = useState<'critical' | 'very-low' | 'low' | 'ordered'>('critical')
@@ -42,9 +43,15 @@ export function HomePage() {
   const [certificatesLoading, setCertificatesLoading] = useState(true)
   const [selectedCertFilter, setSelectedCertFilter] = useState<'all' | 'expired' | 'expiring-soon'>('all')
 
+  // SDS Chemical state
+  const [sdsChemicals, setSdsChemicals] = useState<SDSChemical[]>([])
+  const [sdsLoading, setSdsLoading] = useState(true)
+  const [selectedSdsFilter, setSelectedSdsFilter] = useState<'all' | 'expired' | 'expiring-soon'>('all')
+
   useEffect(() => {
     fetchLowStockProducts()
     fetchCertificates()
+    fetchSDSChemicals()
   }, [])
 
   useEffect(() => {
@@ -243,6 +250,26 @@ export function HomePage() {
     }
   }
 
+  const fetchSDSChemicals = async () => {
+    try {
+      setSdsLoading(true)
+      const { data, error } = await supabase
+        .from('sds_chemicals')
+        .select('*')
+        .not('valid_until', 'is', null)
+        .order('valid_until', { ascending: true })
+
+      if (error) throw error
+
+      setSdsChemicals(data || [])
+    } catch (error) {
+      console.error('Error fetching SDS chemicals:', error)
+      toast.error('Failed to load SDS chemicals')
+    } finally {
+      setSdsLoading(false)
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div>
@@ -276,6 +303,21 @@ export function HomePage() {
           {certificates.filter(c => calculateDaysRemaining(c.valid_until) <= 60).length > 0 && (
             <span className="ml-2 bg-yellow-500 text-white text-xs px-2 py-0.5 rounded-full">
               {certificates.filter(c => calculateDaysRemaining(c.valid_until) <= 60).length}
+            </span>
+          )}
+        </button>
+        <button
+          onClick={() => setActiveView('chemicals')}
+          className={`px-6 py-3 font-semibold text-sm border-b-2 transition-colors ${
+            activeView === 'chemicals'
+              ? 'border-[#6D9197] text-[#6D9197]'
+              : 'border-transparent text-gray-600 hover:text-gray-900'
+          }`}
+        >
+          SDS Expiration
+          {sdsChemicals.filter(c => c.valid_until && calculateDaysRemaining(c.valid_until) <= 60).length > 0 && (
+            <span className="ml-2 bg-yellow-500 text-white text-xs px-2 py-0.5 rounded-full">
+              {sdsChemicals.filter(c => c.valid_until && calculateDaysRemaining(c.valid_until) <= 60).length}
             </span>
           )}
         </button>
@@ -666,6 +708,164 @@ export function HomePage() {
                               <ExternalLink className="h-3 w-3 mr-1" />
                               View Certificate
                             </Button>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* SDS Chemicals View */}
+      {activeView === 'chemicals' && (
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <FileWarning className="h-5 w-5 text-orange-500" />
+                <CardTitle>SDS Expiration Monitoring</CardTitle>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={fetchSDSChemicals}
+              >
+                Refresh
+              </Button>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Track chemical SDS documents and their expiration dates
+            </p>
+
+            {/* Filter Tabs */}
+            <div className="flex gap-2 mt-4 border-b">
+              <button
+                onClick={() => setSelectedSdsFilter('all')}
+                className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                  selectedSdsFilter === 'all'
+                    ? 'border-[#6D9197] text-[#6D9197]'
+                    : 'border-transparent text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                All ({sdsChemicals.length})
+              </button>
+              <button
+                onClick={() => setSelectedSdsFilter('expired')}
+                className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                  selectedSdsFilter === 'expired'
+                    ? 'border-red-500 text-red-600'
+                    : 'border-transparent text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                Expired ({sdsChemicals.filter(c => c.valid_until && calculateDaysRemaining(c.valid_until) < 0).length})
+              </button>
+              <button
+                onClick={() => setSelectedSdsFilter('expiring-soon')}
+                className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                  selectedSdsFilter === 'expiring-soon'
+                    ? 'border-yellow-500 text-yellow-600'
+                    : 'border-transparent text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                Expiring Soon (≤60 days) ({sdsChemicals.filter(c => {
+                  if (!c.valid_until) return false
+                  const days = calculateDaysRemaining(c.valid_until)
+                  return days >= 0 && days <= 60
+                }).length})
+              </button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {sdsLoading ? (
+              <div className="text-center py-8 text-muted-foreground">
+                Loading SDS chemicals...
+              </div>
+            ) : sdsChemicals.length === 0 ? (
+              <div className="text-center py-8">
+                <FileWarning className="h-12 w-12 text-muted-foreground mx-auto mb-2" />
+                <p className="text-muted-foreground">No SDS chemicals with expiration dates found</p>
+              </div>
+            ) : (
+              <div className="space-y-3 max-h-[700px] overflow-y-auto">
+                {sdsChemicals
+                  .filter(chem => {
+                    if (!chem.valid_until) return false
+                    const daysRemaining = calculateDaysRemaining(chem.valid_until)
+                    if (selectedSdsFilter === 'expired') return daysRemaining < 0
+                    if (selectedSdsFilter === 'expiring-soon') return daysRemaining >= 0 && daysRemaining <= 60
+                    return true
+                  })
+                  .map((chem) => {
+                    if (!chem.valid_until) return null
+                    const daysRemaining = calculateDaysRemaining(chem.valid_until)
+                    const status = getCertificateStatus(daysRemaining)
+
+                    return (
+                      <div
+                        key={chem.id}
+                        className={`p-4 rounded-lg border-2 ${status.color} transition-all hover:shadow-md`}
+                      >
+                        <div className="flex items-start justify-between gap-4">
+                          {/* Left side - Chemical info */}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-2">
+                              <h3 className="font-semibold text-base truncate">
+                                {chem.name}
+                              </h3>
+                              <span className={`px-2 py-0.5 rounded text-xs font-semibold ${status.badge}`}>
+                                {status.label}
+                              </span>
+                            </div>
+
+                            <div className="text-sm text-gray-700 mb-1">
+                              <span className="font-medium">Location:</span> {chem.location}
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-2 text-xs text-gray-600 mt-2">
+                              <div>
+                                <span className="font-medium">Valid Since:</span>{' '}
+                                {chem.valid_since ? new Date(chem.valid_since).toLocaleDateString('en-US', {
+                                  year: 'numeric',
+                                  month: 'short',
+                                  day: 'numeric'
+                                }) : 'N/A'}
+                              </div>
+                              <div>
+                                <span className="font-medium">Valid Until:</span>{' '}
+                                {new Date(chem.valid_until).toLocaleDateString('en-US', {
+                                  year: 'numeric',
+                                  month: 'short',
+                                  day: 'numeric'
+                                })}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Right side - Days remaining and action */}
+                          <div className="flex flex-col items-end gap-2">
+                            <div className={`text-center px-4 py-2 rounded-lg bg-white/50`}>
+                              <div className={`text-2xl font-bold ${status.textColor}`}>
+                                {daysRemaining < 0 ? Math.abs(daysRemaining) : daysRemaining}
+                              </div>
+                              <div className="text-xs text-gray-600">
+                                {daysRemaining < 0 ? 'days ago' : 'days left'}
+                              </div>
+                            </div>
+
+                            {chem.pdf_url && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => window.open(chem.pdf_url!, '_blank')}
+                                className="text-xs"
+                              >
+                                <ExternalLink className="h-3 w-3 mr-1" />
+                                View SDS
+                              </Button>
+                            )}
                           </div>
                         </div>
                       </div>
