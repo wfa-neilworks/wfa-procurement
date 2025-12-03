@@ -8,6 +8,7 @@ import { toast } from 'sonner'
 import type { Database } from '../../types/database'
 import { AddStockDialog } from './AddStockDialog'
 import { ReplaceCertificateDialog } from './ReplaceCertificateDialog'
+import { ReplaceSdsDialog } from './ReplaceSdsDialog'
 
 type Product = Database['public']['Tables']['products']['Row']
 type Supplier = Database['public']['Tables']['suppliers']['Row']
@@ -52,6 +53,10 @@ export function HomePage() {
   // Replace Certificate Dialog state
   const [replaceCertDialogOpen, setReplaceCertDialogOpen] = useState(false)
   const [selectedCertificate, setSelectedCertificate] = useState<CertificateWithSupplier | null>(null)
+
+  // Replace SDS Dialog state
+  const [replaceSdsDialogOpen, setReplaceSdsDialogOpen] = useState(false)
+  const [selectedSdsChemical, setSelectedSdsChemical] = useState<SDSChemical | null>(null)
 
   useEffect(() => {
     fetchLowStockProducts()
@@ -878,17 +883,35 @@ export function HomePage() {
                               </div>
                             </div>
 
-                            {chem.pdf_url && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => window.open(chem.pdf_url!, '_blank')}
-                                className="text-xs"
-                              >
-                                <ExternalLink className="h-3 w-3 mr-1" />
-                                View SDS
-                              </Button>
-                            )}
+                            <div className="flex flex-col gap-1.5 w-full">
+                              {chem.pdf_url && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => window.open(chem.pdf_url!, '_blank')}
+                                  className="text-xs w-full"
+                                >
+                                  <ExternalLink className="h-3 w-3 mr-1" />
+                                  View SDS
+                                </Button>
+                              )}
+
+                              {/* Show Replace button for expired or expiring soon SDS */}
+                              {daysRemaining <= 60 && (
+                                <Button
+                                  variant="default"
+                                  size="sm"
+                                  onClick={() => {
+                                    setSelectedSdsChemical(chem)
+                                    setReplaceSdsDialogOpen(true)
+                                  }}
+                                  className="text-xs w-full bg-[#6D9197] hover:bg-[#5a7a7f]"
+                                >
+                                  <RefreshCw className="h-3 w-3 mr-1" />
+                                  Replace SDS
+                                </Button>
+                              )}
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -924,6 +947,21 @@ export function HomePage() {
           fetchCertificates()
           setReplaceCertDialogOpen(false)
           setSelectedCertificate(null)
+        }}
+      />
+
+      {/* Replace SDS Dialog */}
+      <ReplaceSdsDialog
+        isOpen={replaceSdsDialogOpen}
+        onClose={() => {
+          setReplaceSdsDialogOpen(false)
+          setSelectedSdsChemical(null)
+        }}
+        chemical={selectedSdsChemical}
+        onSuccess={() => {
+          fetchSDSChemicals()
+          setReplaceSdsDialogOpen(false)
+          setSelectedSdsChemical(null)
         }}
       />
     </div>
