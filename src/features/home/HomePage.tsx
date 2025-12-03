@@ -2,11 +2,12 @@ import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card'
 import { Button } from '../../components/ui/button'
 import { Input } from '../../components/ui/input'
-import { Plus, X, AlertTriangle, Package, CheckCircle, Clock, FileWarning, ExternalLink } from 'lucide-react'
+import { Plus, X, AlertTriangle, Package, CheckCircle, Clock, FileWarning, ExternalLink, RefreshCw } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { toast } from 'sonner'
 import type { Database } from '../../types/database'
 import { AddStockDialog } from './AddStockDialog'
+import { ReplaceCertificateDialog } from './ReplaceCertificateDialog'
 
 type Product = Database['public']['Tables']['products']['Row']
 type Supplier = Database['public']['Tables']['suppliers']['Row']
@@ -47,6 +48,10 @@ export function HomePage() {
   const [sdsChemicals, setSdsChemicals] = useState<SDSChemical[]>([])
   const [sdsLoading, setSdsLoading] = useState(true)
   const [selectedSdsFilter, setSelectedSdsFilter] = useState<'all' | 'expired' | 'expiring-soon'>('all')
+
+  // Replace Certificate Dialog state
+  const [replaceCertDialogOpen, setReplaceCertDialogOpen] = useState(false)
+  const [selectedCertificate, setSelectedCertificate] = useState<CertificateWithSupplier | null>(null)
 
   useEffect(() => {
     fetchLowStockProducts()
@@ -699,15 +704,33 @@ export function HomePage() {
                               </div>
                             </div>
 
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => window.open(cert.file_url, '_blank')}
-                              className="text-xs"
-                            >
-                              <ExternalLink className="h-3 w-3 mr-1" />
-                              View Certificate
-                            </Button>
+                            <div className="flex flex-col gap-1.5 w-full">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => window.open(cert.file_url, '_blank')}
+                                className="text-xs w-full"
+                              >
+                                <ExternalLink className="h-3 w-3 mr-1" />
+                                View Certificate
+                              </Button>
+
+                              {/* Show Replace button for expired or expiring soon certificates */}
+                              {daysRemaining <= 60 && (
+                                <Button
+                                  variant="default"
+                                  size="sm"
+                                  onClick={() => {
+                                    setSelectedCertificate(cert)
+                                    setReplaceCertDialogOpen(true)
+                                  }}
+                                  className="text-xs w-full bg-[#6D9197] hover:bg-[#5a7a7f]"
+                                >
+                                  <RefreshCw className="h-3 w-3 mr-1" />
+                                  Replace Certificate
+                                </Button>
+                              )}
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -888,6 +911,21 @@ export function HomePage() {
           onConfirm={handleAddStockConfirm}
         />
       )}
+
+      {/* Replace Certificate Dialog */}
+      <ReplaceCertificateDialog
+        isOpen={replaceCertDialogOpen}
+        onClose={() => {
+          setReplaceCertDialogOpen(false)
+          setSelectedCertificate(null)
+        }}
+        certificate={selectedCertificate}
+        onSuccess={() => {
+          fetchCertificates()
+          setReplaceCertDialogOpen(false)
+          setSelectedCertificate(null)
+        }}
+      />
     </div>
   )
 }
