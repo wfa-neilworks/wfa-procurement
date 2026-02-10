@@ -219,6 +219,38 @@ export interface Database {
           updated_at?: string
         }
       }
+      batch_logs: {
+        Row: {
+          id: number
+          product_code: string
+          product_name: string
+          batch_reference: string
+          pallet_number: string
+          scanned_date: string
+          scanned_time: string
+          created_at: string
+        }
+        Insert: {
+          id?: number
+          product_code: string
+          product_name: string
+          batch_reference: string
+          pallet_number: string
+          scanned_date: string
+          scanned_time: string
+          created_at?: string
+        }
+        Update: {
+          id?: number
+          product_code?: string
+          product_name?: string
+          batch_reference?: string
+          pallet_number?: string
+          scanned_date?: string
+          scanned_time?: string
+          created_at?: string
+        }
+      }
       pallet_unloads: {
         Row: {
           id: string

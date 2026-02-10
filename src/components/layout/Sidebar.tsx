@@ -13,7 +13,8 @@ import {
   ChevronRight,
   FileCheck,
   Menu,
-  X
+  X,
+  ScanBarcode
 } from 'lucide-react'
 import { cn } from '../../lib/utils'
 
@@ -31,6 +32,7 @@ const navigation = [
     ]
   },
   { name: 'Pallets', to: '/pallets', icon: Boxes },
+  { name: 'Batch Monitoring', to: '/batch-monitoring', icon: ScanBarcode },
   { name: 'SDS', to: '/sds', icon: FileText },
   { name: 'Suppliers', to: '/suppliers', icon: Users },
   { name: 'Order Forms', to: '/order-forms', icon: FileCheck },

@@ -12,6 +12,7 @@ import { InventoryPage } from './features/inventory/InventoryPage'
 import { SuppliersPage } from './features/suppliers/SuppliersPage'
 import { SDSPage } from './features/sds/SDSPage'
 import { PalletsPage } from './features/pallets/PalletsPage'
+import { BatchMonitoringPage } from './features/batch-monitoring/BatchMonitoringPage'
 import { OrderFormsPage } from './features/order-forms/OrderFormsPage'
 import { PurchaseOrdersPage } from './features/purchase-orders/PurchaseOrdersPage'
 import { ReportsPage } from './features/reports/ReportsPage'
@@ -39,6 +40,7 @@ function App() {
                 <Route path="suppliers" element={<SuppliersPage />} />
                 <Route path="sds" element={<SDSPage />} />
                 <Route path="pallets" element={<PalletsPage />} />
+                <Route path="batch-monitoring" element={<BatchMonitoringPage />} />
                 <Route path="order-forms" element={<OrderFormsPage />} />
                 <Route path="purchase-orders" element={<PurchaseOrdersPage />} />
                 <Route path="reports" element={<ReportsPage />} />
