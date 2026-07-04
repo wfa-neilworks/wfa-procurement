@@ -48,17 +48,13 @@ function LoadingScreen() {
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, profile, isAdmin, loading } = useAuth()
 
-  // Still initialising — show spinner
   if (loading) return <LoadingScreen />
-
-  // Not logged in — go to login
   if (!user) return <Navigate to="/login" replace />
 
-  // Logged in but profile not yet loaded — keep spinning briefly
-  // (profile loads right after session, this resolves in <1s)
-  if (!profile) return <LoadingScreen />
+  // Profile missing entirely (no row in DB) — treat as pending
+  if (!profile) return <Navigate to="/pending" replace />
 
-  // Logged in, has profile, but no permissions and not admin — pending
+  // Has profile but no permissions and not admin — pending
   if (!isAdmin && profile.permissions.length === 0) {
     return <Navigate to="/pending" replace />
   }
@@ -67,8 +63,8 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 }
 
 function AdminRoute({ children }: { children: React.ReactNode }) {
-  const { user, isAdmin, loading, profile } = useAuth()
-  if (loading || !profile) return <LoadingScreen />
+  const { user, isAdmin, loading } = useAuth()
+  if (loading) return <LoadingScreen />
   if (!user) return <Navigate to="/login" replace />
   if (!isAdmin) return <Navigate to="/" replace />
   return <>{children}</>

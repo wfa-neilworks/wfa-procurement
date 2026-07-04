@@ -28,20 +28,19 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 async function fetchProfile(userId: string): Promise<UserProfile | null> {
   try {
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from('user_profiles')
       .select('id, full_name, role, permissions, created_at')
       .eq('id', userId)
-      .single()
+      .single() as any
 
-    if (error || !data) return null
-
+    if (!data) return null
     return {
-      id: (data as any).id,
-      full_name: (data as any).full_name ?? null,
-      role: ((data as any).role as 'admin' | 'user') ?? 'user',
-      permissions: Array.isArray((data as any).permissions) ? (data as any).permissions : [],
-      created_at: (data as any).created_at,
+      id: data.id,
+      full_name: data.full_name ?? null,
+      role: data.role ?? 'user',
+      permissions: Array.isArray(data.permissions) ? data.permissions : [],
+      created_at: data.created_at,
     }
   } catch {
     return null
@@ -64,8 +63,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let mounted = true
 
-    // onAuthStateChange fires immediately with INITIAL_SESSION on page load
-    // This is the single source of truth — no need for a separate getSession call
+    // Safety timeout — if auth hasn't resolved in 5s, stop loading anyway
+    const timeout = setTimeout(() => {
+      if (mounted && loading) {
+        setLoading(false)
+      }
+    }, 5000)
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (!mounted) return
@@ -74,19 +78,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(session?.user ?? null)
 
         if (session?.user) {
-          // Fetch profile after we have a valid session
           const p = await fetchProfile(session.user.id)
           if (mounted) setProfile(p)
         } else {
           setProfile(null)
         }
 
-        if (mounted) setLoading(false)
+        if (mounted) {
+          setLoading(false)
+          clearTimeout(timeout)
+        }
       }
     )
 
     return () => {
       mounted = false
+      clearTimeout(timeout)
       subscription.unsubscribe()
     }
   }, [])
@@ -103,7 +110,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const userId = data.user?.id ?? data.session?.user?.id
     if (!userId) return { error: null }
 
-    // Insert profile — try insert first, fallback to upsert
     const { error: insertError } = await supabase
       .from('user_profiles')
       .insert({ id: userId, full_name: fullName, role: 'user', permissions: [] } as any)
@@ -134,7 +140,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   return (
     <AuthContext.Provider value={{
       user, profile, session, loading,
-      isAdmin, can, signIn, signUp, signOut, refreshProfile
+      isAdmin, can, signIn, signUp, signOut, refreshProfile,
     }}>
       {children}
     </AuthContext.Provider>

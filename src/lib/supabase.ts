@@ -13,10 +13,9 @@ export const supabase = createClient<Database>(
     auth: {
       persistSession: true,
       autoRefreshToken: true,
-      detectSessionInUrl: true,
+      detectSessionInUrl: false,
       storage: window.localStorage,
       storageKey: 'wfa-procurement-auth',
-      flowType: 'pkce',
     },
   }
 )
