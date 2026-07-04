@@ -51,9 +51,9 @@ async function resolveBarcode(raw: string): Promise<{
 } | null> {
   const categoryHint = LENGTH_TO_CATEGORY[raw.length] ?? null
 
-  const q = supabase.from('batch_references').select('*') as any
-  if (categoryHint) q.eq('category', categoryHint)
-  const { data } = await q
+  let q = supabase.from('batch_references').select('*')
+  if (categoryHint) q = (q as any).eq('category', categoryHint)
+  const { data } = await q as any
   const refs: BatchRef[] = data ?? []
 
   for (const ref of refs) {
