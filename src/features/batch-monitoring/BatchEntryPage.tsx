@@ -112,13 +112,33 @@ export function BatchEntryPage() {
 
       const { batchRef, extractedRef, ctnNumber } = resolved
       const now = new Date()
+      const scannedDate = now.toISOString().split('T')[0]
+
+      // Check for duplicate — same product + batch ref + CTN already logged today
+      const { data: existing } = await supabase
+        .from('batch_logs')
+        .select('id')
+        .eq('product_code', batchRef.product_code)
+        .eq('batch_reference', extractedRef)
+        .eq('pallet_number', ctnNumber)
+        .eq('scanned_date', scannedDate)
+        .limit(1) as any
+
+      if (existing && existing.length > 0) {
+        setResult({
+          ok: false,
+          message: 'Already recorded',
+          detail: `${batchRef.product_code} · ${extractedRef}${ctnNumber !== '0' ? ` CTN ${ctnNumber}` : ''} was already logged today`,
+        })
+        return
+      }
 
       const { error } = await supabase.from('batch_logs').insert({
         product_code: batchRef.product_code,
         product_name: batchRef.product_name,
         batch_reference: extractedRef,
         pallet_number: ctnNumber,
-        scanned_date: now.toISOString().split('T')[0],
+        scanned_date: scannedDate,
         scanned_time: now.toTimeString().split(' ')[0],
         supplier_id: batchRef.supplier_id ?? null,
         supplier_name: batchRef.supplier_name ?? null,
