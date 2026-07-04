@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { ScanLine, CheckCircle2, XCircle, Loader2 } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
-import { useAuth } from '../../hooks/useAuth'
 
 interface ScanResult {
   ok: boolean
@@ -9,14 +8,85 @@ interface ScanResult {
   detail?: string
 }
 
+interface FormatMask {
+  supplier_id: string
+  supplier_name: string
+  format_mask: string
+  has_ctn: boolean
+  category: string | null
+}
+
+interface BatchRef {
+  id: number
+  product_code: string
+  product_name: string
+  category: string | null
+  supplier_id: string | null
+  supplier_name: string | null
+  batch_references: string[]
+}
+
+// Parse a format mask like "XXXXXXXXYYY" into batch length and ctn length
+// X = batch digits, Y = carton digits
+function parseMask(mask: string): { batchLen: number; ctnLen: number; totalLen: number } {
+  const batchLen = (mask.match(/X/gi) ?? []).length
+  const ctnLen = (mask.match(/Y/gi) ?? []).length
+  return { batchLen, ctnLen, totalLen: batchLen + ctnLen }
+}
+
+// Try to match a raw barcode against all known format masks and batch references
+// Returns the matched batch ref row, extracted batch ref string, and ctn number
+async function resolveBarcode(raw: string): Promise<{
+  batchRef: BatchRef
+  extractedRef: string
+  ctnNumber: string
+} | null> {
+  // Load all format masks and all batch references in parallel
+  const [{ data: formats }, { data: allRefs }] = await Promise.all([
+    supabase.from('supplier_barcode_formats').select('supplier_id, supplier_name, format_mask, has_ctn, category') as any,
+    supabase.from('batch_references').select('*') as any,
+  ])
+
+  const masks: FormatMask[] = formats ?? []
+  const refs: BatchRef[] = allRefs ?? []
+
+  // Try each format mask
+  for (const fmt of masks) {
+    const { batchLen, ctnLen, totalLen } = parseMask(fmt.format_mask)
+
+    // Barcode must match the total length of this mask
+    if (raw.length !== totalLen) continue
+
+    const extractedRef = raw.substring(0, batchLen)
+    const ctnNumber = fmt.has_ctn ? raw.substring(batchLen) : '0'
+
+    // Find a batch_references row for this supplier that contains the extracted ref
+    const match = refs.find(r =>
+      r.supplier_id === fmt.supplier_id &&
+      r.batch_references.includes(extractedRef)
+    )
+
+    if (match) {
+      return { batchRef: match, extractedRef, ctnNumber }
+    }
+  }
+
+  // Fallback: try exact match across all refs regardless of supplier/format
+  for (const ref of refs) {
+    if (ref.batch_references.includes(raw)) {
+      return { batchRef: ref, extractedRef: raw, ctnNumber: '0' }
+    }
+  }
+
+  return null
+}
+
 export function BatchEntryPage() {
-  const { user } = useAuth()
   const [barcode, setBarcode] = useState('')
   const [scanning, setScanning] = useState(false)
   const [result, setResult] = useState<ScanResult | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
-  // Keep focus on input at all times
   useEffect(() => {
     inputRef.current?.focus()
   }, [])
@@ -29,53 +99,48 @@ export function BatchEntryPage() {
     setResult(null)
 
     try {
-      // Insert directly into batch_logs
-      // Expected barcode format: product_code|batch_reference|pallet_number
-      // or just a raw batch_reference — adjust parsing to match your scanner output
-      const parts = value.split('|')
-      const productCode = parts[0] ?? value
-      const batchReference = parts[1] ?? value
-      const palletNumber = parts[2] ?? ''
+      const resolved = await resolveBarcode(value)
 
-      // Look up product details
-      const { data: product } = await supabase
-        .from('products')
-        .select('code, description, supplier_id, supplier_name')
-        .eq('code', productCode)
-        .single() as any
+      if (!resolved) {
+        setResult({
+          ok: false,
+          message: 'No match found',
+          detail: `"${value}" did not match any known batch reference`,
+        })
+        return
+      }
 
+      const { batchRef, extractedRef, ctnNumber } = resolved
       const now = new Date()
-      const scannedDate = now.toISOString().split('T')[0]
-      const scannedTime = now.toTimeString().split(' ')[0]
 
       const { error } = await supabase.from('batch_logs').insert({
-        product_code: productCode,
-        product_name: product?.description ?? productCode,
-        batch_reference: batchReference,
-        pallet_number: palletNumber,
-        scanned_date: scannedDate,
-        scanned_time: scannedTime,
-        supplier_id: product?.supplier_id ?? null,
-        supplier_name: product?.supplier_name ?? null,
+        product_code: batchRef.product_code,
+        product_name: batchRef.product_name,
+        batch_reference: extractedRef,
+        pallet_number: ctnNumber,
+        scanned_date: now.toISOString().split('T')[0],
+        scanned_time: now.toTimeString().split(' ')[0],
+        supplier_id: batchRef.supplier_id ?? null,
+        supplier_name: batchRef.supplier_name ?? null,
+        category: batchRef.category ?? null,
       } as any)
 
       if (error) throw error
 
       setResult({
         ok: true,
-        message: 'Batch logged successfully',
-        detail: `${productCode} — ${batchReference}${palletNumber ? ` / Pallet ${palletNumber}` : ''}`,
+        message: 'Batch logged',
+        detail: `${batchRef.product_name}${ctnNumber !== '0' ? ` · CTN ${ctnNumber}` : ''} · ${batchRef.supplier_name ?? ''}`,
       })
     } catch (err: any) {
       setResult({
         ok: false,
-        message: 'Failed to log batch',
+        message: 'Error',
         detail: err?.message ?? 'Unknown error',
       })
     } finally {
       setScanning(false)
       setBarcode('')
-      // Refocus after a short delay so the result is visible
       setTimeout(() => inputRef.current?.focus(), 100)
     }
   }
@@ -86,7 +151,6 @@ export function BatchEntryPage() {
       style={{ backgroundColor: '#080d18' }}
       onClick={() => inputRef.current?.focus()}
     >
-      {/* Header */}
       <div className="text-center space-y-1">
         <div className="flex items-center justify-center gap-2 text-blue-400">
           <ScanLine className="h-6 w-6" />
@@ -95,16 +159,13 @@ export function BatchEntryPage() {
         <p className="text-sm" style={{ color: '#3a5a7a' }}>Scan or type a barcode and press Enter</p>
       </div>
 
-      {/* Big scan input */}
       <div className="w-full max-w-2xl px-6">
         <input
           ref={inputRef}
           type="text"
           value={barcode}
           onChange={(e) => setBarcode(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') handleScan(barcode)
-          }}
+          onKeyDown={(e) => { if (e.key === 'Enter') handleScan(barcode) }}
           placeholder="Scan barcode here..."
           autoComplete="off"
           spellCheck={false}
@@ -119,7 +180,6 @@ export function BatchEntryPage() {
         />
       </div>
 
-      {/* Status */}
       <div className="h-20 flex items-center justify-center">
         {scanning && (
           <div className="flex items-center gap-3 text-blue-300">
@@ -128,11 +188,9 @@ export function BatchEntryPage() {
           </div>
         )}
         {!scanning && result && (
-          <div className={`flex flex-col items-center gap-1 ${result.ok ? 'text-green-400' : 'text-red-400'}`}>
+          <div className={`flex flex-col items-center gap-2 ${result.ok ? 'text-green-400' : 'text-red-400'}`}>
             <div className="flex items-center gap-2 text-xl font-semibold">
-              {result.ok
-                ? <CheckCircle2 className="h-6 w-6" />
-                : <XCircle className="h-6 w-6" />}
+              {result.ok ? <CheckCircle2 className="h-6 w-6" /> : <XCircle className="h-6 w-6" />}
               {result.message}
             </div>
             {result.detail && (
@@ -141,9 +199,7 @@ export function BatchEntryPage() {
           </div>
         )}
         {!scanning && !result && (
-          <div className="text-sm" style={{ color: '#1e3a5a' }}>
-            Ready to scan
-          </div>
+          <div className="text-sm" style={{ color: '#1e3a5a' }}>Ready to scan</div>
         )}
       </div>
     </div>
