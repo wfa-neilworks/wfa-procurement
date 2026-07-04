@@ -72,7 +72,7 @@ export function BellLayout() {
       <aside className="w-56 shrink-0 flex flex-col h-full" style={{ backgroundColor: '#0a0f1a', borderRight: '1px solid #1e2d4a' }}>
         {/* Logo */}
         <div className="p-4 border-b" style={{ borderColor: '#1e2d4a' }}>
-          <img src="/Bellv2.png" alt="BELL" className="w-full object-contain" style={{ maxHeight: 48 }} />
+          <img src="/Bellv2.png" alt="BELL" style={{ width: '100%', height: 'auto', display: 'block' }} />
         </div>
 
         {/* Nav */}
