@@ -6,6 +6,11 @@ interface ScanResult {
   ok: boolean
   message: string
   detail?: string
+  productCode?: string
+  productName?: string
+  batchRef?: string
+  ctn?: string
+  supplier?: string
 }
 
 interface BatchRef {
@@ -149,7 +154,11 @@ export function BatchEntryPage() {
       setResult({
         ok: true,
         message: 'Batch logged',
-        detail: `${batchRef.product_name}${ctnNumber !== '0' ? ` · CTN ${ctnNumber}` : ''} · ${batchRef.supplier_name ?? ''}`,
+        productCode: batchRef.product_code,
+        productName: batchRef.product_name,
+        batchRef: extractedRef,
+        ctn: ctnNumber,
+        supplier: batchRef.supplier_name ?? '',
       })
     } catch (err: any) {
       setResult({
@@ -170,14 +179,19 @@ export function BatchEntryPage() {
       style={{ backgroundColor: '#080d18' }}
       onClick={() => inputRef.current?.focus()}
     >
+      {/* Logo */}
+      <img src="/Bell.png" alt="BELL" style={{ height: 52, objectFit: 'contain' }} />
+
+      {/* Title */}
       <div className="text-center space-y-1">
         <div className="flex items-center justify-center gap-2 text-blue-400">
-          <ScanLine className="h-6 w-6" />
-          <span className="text-lg font-semibold tracking-widest uppercase">Batch Entry</span>
+          <ScanLine className="h-5 w-5" />
+          <span className="text-base font-semibold tracking-widest uppercase">Batch Entry</span>
         </div>
-        <p className="text-sm" style={{ color: '#3a5a7a' }}>Scan or type a barcode and press Enter</p>
+        <p className="text-xs" style={{ color: '#3a5a7a' }}>Scan or type a barcode and press Enter</p>
       </div>
 
+      {/* Scan input */}
       <div className="w-full max-w-2xl px-6">
         <input
           ref={inputRef}
@@ -199,26 +213,42 @@ export function BatchEntryPage() {
         />
       </div>
 
-      <div className="h-20 flex items-center justify-center">
+      {/* Result */}
+      <div className="flex items-center justify-center" style={{ minHeight: 220 }}>
         {scanning && (
           <div className="flex items-center gap-3 text-blue-300">
-            <Loader2 className="h-5 w-5 animate-spin" />
-            <span className="text-lg">Processing...</span>
+            <Loader2 className="h-6 w-6 animate-spin" />
+            <span className="text-xl">Processing...</span>
           </div>
         )}
-        {!scanning && result && (
-          <div className={`flex flex-col items-center gap-2 ${result.ok ? 'text-green-400' : 'text-red-400'}`}>
-            <div className="flex items-center gap-2 text-xl font-semibold">
-              {result.ok ? <CheckCircle2 className="h-6 w-6" /> : <XCircle className="h-6 w-6" />}
-              {result.message}
+
+        {!scanning && result && result.ok && (
+          <div className="flex flex-col items-center gap-5 text-center">
+            <CheckCircle2 className="h-20 w-20" style={{ color: '#22c55e' }} />
+            <span className="text-3xl font-bold" style={{ color: '#22c55e' }}>Batch Logged</span>
+            <div className="space-y-2 mt-1">
+              <div className="text-lg font-semibold text-white">{result.productCode} &mdash; {result.productName}</div>
+              <div className="flex items-center justify-center gap-6 text-sm" style={{ color: '#6ab0d4' }}>
+                <span>Batch <span className="font-mono font-bold text-white text-base">{result.batchRef}</span></span>
+                {result.ctn !== '0' && (
+                  <span>CTN <span className="font-mono font-bold text-white text-base">{result.ctn}</span></span>
+                )}
+              </div>
+              <div className="text-sm mt-1" style={{ color: '#3a6a8a' }}>{result.supplier}</div>
             </div>
-            {result.detail && (
-              <span className="text-sm font-mono opacity-70">{result.detail}</span>
-            )}
           </div>
         )}
+
+        {!scanning && result && !result.ok && (
+          <div className="flex flex-col items-center gap-4 text-center">
+            <XCircle className="h-16 w-16" style={{ color: '#ef4444' }} />
+            <span className="text-2xl font-bold" style={{ color: '#ef4444' }}>{result.message}</span>
+            {result.detail && <span className="text-sm font-mono" style={{ color: '#7a3a3a' }}>{result.detail}</span>}
+          </div>
+        )}
+
         {!scanning && !result && (
-          <div className="text-sm" style={{ color: '#1e3a5a' }}>Ready to scan</div>
+          <div className="text-sm" style={{ color: '#1a3a5a' }}>Ready to scan</div>
         )}
       </div>
     </div>
