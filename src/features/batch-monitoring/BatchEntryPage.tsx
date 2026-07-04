@@ -111,24 +111,24 @@ export function BatchEntryPage() {
       }
 
       const { batchRef, extractedRef, ctnNumber } = resolved
+      console.log('[scan] matched:', { product: batchRef.product_code, extractedRef, ctnNumber })
       const now = new Date()
       const scannedDate = now.toISOString().split('T')[0]
 
-      // Check for duplicate — same product + batch ref + CTN already logged today
+      // Check for duplicate — same batch ref + product already logged today
       const { data: existing } = await supabase
         .from('batch_logs')
         .select('id')
         .eq('product_code', batchRef.product_code)
         .eq('batch_reference', extractedRef)
-        .eq('pallet_number', ctnNumber)
         .eq('scanned_date', scannedDate)
         .limit(1) as any
 
       if (existing && existing.length > 0) {
         setResult({
           ok: false,
-          message: 'Already recorded',
-          detail: `${batchRef.product_code} · ${extractedRef}${ctnNumber !== '0' ? ` CTN ${ctnNumber}` : ''} was already logged today`,
+          message: 'Already recorded today',
+          detail: `${extractedRef} for ${batchRef.product_name} was already logged today`,
         })
         return
       }
