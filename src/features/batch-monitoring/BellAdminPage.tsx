@@ -11,6 +11,8 @@ interface BatchReference {
   batch_references: string[]
   supplier_id: string | null
   supplier_name: string | null
+  format_mask: string | null
+  has_ctn: boolean
 }
 
 interface Supplier {
@@ -42,6 +44,8 @@ function EditModal({
   const [productName, setProductName] = useState(row?.product_name ?? '')
   const [category, setCategory] = useState(row?.category ?? '')
   const [supplierId, setSupplierId] = useState(row?.supplier_id ?? '')
+  const [formatMask, setFormatMask] = useState(row?.format_mask ?? '')
+  const [hasCtn, setHasCtn] = useState(row?.has_ctn ?? false)
   const [refsText, setRefsText] = useState((row?.batch_references ?? []).join('\n'))
   const [saving, setSaving] = useState(false)
 
@@ -65,6 +69,8 @@ function EditModal({
         category: category || null,
         supplier_id: supplierId,
         supplier_name: selectedSupplier?.name ?? null,
+        format_mask: formatMask.trim().toUpperCase() || null,
+        has_ctn: hasCtn,
         batch_references: refs,
       }
       if (isNew) {
@@ -149,6 +155,32 @@ function EditModal({
             </div>
           </div>
 
+          <div className="space-y-2">
+            <div>
+              <label className="block text-xs font-medium mb-1" style={{ color: '#4a7a9a' }}>
+                Format Mask <span className="opacity-50">(X = batch, Y = CTN, Z = ignore)</span>
+              </label>
+              <input
+                value={formatMask}
+                onChange={e => {
+                  setFormatMask(e.target.value.toUpperCase())
+                  setHasCtn(e.target.value.toUpperCase().includes('Y'))
+                }}
+                placeholder="e.g. ZXXXXXXXXYYYYZZZZZZZZZZZZZZZZZZZZZZ"
+                className="w-full rounded-lg px-3 py-2 text-sm font-mono text-white outline-none"
+                style={{ backgroundColor: '#0a1520', border: '1px solid #1e3a5a' }}
+              />
+            </div>
+            {formatMask && (
+              <div className="flex gap-4 text-xs px-1" style={{ color: '#4a7a9a' }}>
+                <span>Total: <b className="text-white">{formatMask.length}</b> chars</span>
+                <span>Batch: <b className="text-blue-300">{(formatMask.match(/X/g) ?? []).length}</b> chars</span>
+                <span>CTN: <b className="text-green-400">{(formatMask.match(/Y/g) ?? []).length}</b> chars</span>
+                <span>Ignored: <b style={{ color: '#4a6a7a' }}>{(formatMask.match(/Z/g) ?? []).length}</b> chars</span>
+              </div>
+            )}
+          </div>
+
           <div>
             <label className="block text-xs font-medium mb-1" style={{ color: '#4a7a9a' }}>
               Batch References <span className="opacity-50">(one per line)</span>
@@ -206,6 +238,7 @@ function GroupedTable({
           <th className="text-left px-4 py-2 text-xs font-medium" style={{ color: '#3a6a8a' }}>Code</th>
           <th className="text-left px-4 py-2 text-xs font-medium" style={{ color: '#3a6a8a' }}>Product Name</th>
           <th className="text-left px-4 py-2 text-xs font-medium" style={{ color: '#3a6a8a' }}>Supplier</th>
+          <th className="text-left px-4 py-2 text-xs font-medium" style={{ color: '#3a6a8a' }}>Format Mask</th>
           <th className="text-left px-4 py-2 text-xs font-medium" style={{ color: '#3a6a8a' }}>Batch References</th>
           <th className="px-4 py-2 w-20" />
         </tr>
@@ -221,6 +254,11 @@ function GroupedTable({
             <td className="px-4 py-2.5 text-white">{row.product_name}</td>
             <td className="px-4 py-2.5 text-xs" style={{ color: '#4a8aaa' }}>
               {row.supplier_name ?? <span style={{ color: '#2a4a6a' }}>—</span>}
+            </td>
+            <td className="px-4 py-2.5">
+              {row.format_mask
+                ? <span className="font-mono text-xs px-1.5 py-0.5 rounded" style={{ backgroundColor: '#0a1a2a', color: '#4a9fd4' }}>{row.format_mask}</span>
+                : <span style={{ color: '#2a4a6a', fontSize: '0.75rem' }}>—</span>}
             </td>
             <td className="px-4 py-2.5">
               <div className="flex flex-wrap gap-1">

@@ -8,14 +8,6 @@ interface ScanResult {
   detail?: string
 }
 
-interface FormatMask {
-  supplier_id: string
-  supplier_name: string
-  format_mask: string
-  has_ctn: boolean
-  category: string | null
-}
-
 interface BatchRef {
   id: number
   product_code: string
@@ -24,14 +16,25 @@ interface BatchRef {
   supplier_id: string | null
   supplier_name: string | null
   batch_references: string[]
+  format_mask: string | null
+  has_ctn: boolean
 }
 
-// Parse a format mask like "XXXXXXXXYYY" into batch length and ctn length
-// X = batch digits, Y = carton digits
-function parseMask(mask: string): { batchLen: number; ctnLen: number; totalLen: number } {
-  const batchLen = (mask.match(/X/gi) ?? []).length
-  const ctnLen = (mask.match(/Y/gi) ?? []).length
-  return { batchLen, ctnLen, totalLen: batchLen + ctnLen }
+// Extract batch ref and CTN from a barcode using a mask
+// X = batch ref char, Y = carton number char, Z = ignored
+// e.g. mask "ZXXXXXXXXYYYYZZ", barcode "A12345678001XX"
+//   → batchRef = "12345678", ctn = "001"
+function applyMask(mask: string, barcode: string): { batchRef: string; ctn: string } | null {
+  if (mask.length !== barcode.length) return null
+  let batchRef = ''
+  let ctn = ''
+  for (let i = 0; i < mask.length; i++) {
+    const m = mask[i].toUpperCase()
+    if (m === 'X') batchRef += barcode[i]
+    else if (m === 'Y') ctn += barcode[i]
+    // Z = skip
+  }
+  return { batchRef, ctn }
 }
 
 // Known fixed-length categories — add more as confirmed
@@ -46,47 +49,32 @@ async function resolveBarcode(raw: string): Promise<{
   extractedRef: string
   ctnNumber: string
 } | null> {
-  // If barcode length maps to a known category, only load refs for that category
   const categoryHint = LENGTH_TO_CATEGORY[raw.length] ?? null
 
-  const refsQuery = supabase.from('batch_references').select('*') as any
-  if (categoryHint) refsQuery.eq('category', categoryHint)
+  const q = supabase.from('batch_references').select('*') as any
+  if (categoryHint) q.eq('category', categoryHint)
+  const { data } = await q
+  const refs: BatchRef[] = data ?? []
 
-  const [{ data: formats }, { data: allRefs }] = await Promise.all([
-    supabase.from('supplier_barcode_formats').select('supplier_id, supplier_name, format_mask, has_ctn, category') as any,
-    refsQuery,
-  ])
-
-  const masks: FormatMask[] = formats ?? []
-  // If we have a category hint, also filter masks to that category
-  const filteredMasks = categoryHint ? masks.filter(m => m.category === categoryHint) : masks
-  const refs: BatchRef[] = allRefs ?? []
-
-  // Try each format mask
-  for (const fmt of filteredMasks) {
-    const { batchLen, ctnLen, totalLen } = parseMask(fmt.format_mask)
-
-    // Barcode must match the total length of this mask
-    if (raw.length !== totalLen) continue
-
-    const extractedRef = raw.substring(0, batchLen)
-    const ctnNumber = fmt.has_ctn ? raw.substring(batchLen) : '0'
-
-    // Find a batch_references row for this supplier that contains the extracted ref
-    const match = refs.find(r =>
-      r.supplier_id === fmt.supplier_id &&
-      r.batch_references.includes(extractedRef)
-    )
-
-    if (match) {
-      return { batchRef: match, extractedRef, ctnNumber }
-    }
-  }
-
-  // Fallback: try exact match within the already-filtered refs
   for (const ref of refs) {
-    if (ref.batch_references.includes(raw)) {
-      return { batchRef: ref, extractedRef: raw, ctnNumber: '0' }
+    if (!ref.format_mask) {
+      // No mask — exact match only
+      if (ref.batch_references.includes(raw)) {
+        return { batchRef: ref, extractedRef: raw, ctnNumber: '0' }
+      }
+      continue
+    }
+
+    const parsed = applyMask(ref.format_mask, raw)
+    if (!parsed) continue // barcode length doesn't match this mask
+
+    const { batchRef: extractedRef, ctn } = parsed
+    if (ref.batch_references.includes(extractedRef)) {
+      return {
+        batchRef: ref,
+        extractedRef,
+        ctnNumber: ref.has_ctn ? (ctn || '0') : '0',
+      }
     }
   }
 
