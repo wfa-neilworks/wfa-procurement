@@ -16,7 +16,7 @@ export function BellLayout() {
   const visibleNav = nav.filter(item => item.name !== 'Admin' || isAdmin)
 
   return (
-    <div className="flex h-full">
+    <div className="flex h-screen w-screen">
       {/* BELL Sidebar */}
       <aside className="w-56 shrink-0 flex flex-col h-full" style={{ backgroundColor: '#0a0f1a', borderRight: '1px solid #1e2d4a' }}>
         {/* Logo */}

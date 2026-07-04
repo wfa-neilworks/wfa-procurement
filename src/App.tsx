@@ -79,18 +79,19 @@ function AppRoutes() {
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/pending" element={<PendingPage />} />
 
+      <Route path="/batch-monitoring" element={<ProtectedRoute><BellLayout /></ProtectedRoute>}>
+        <Route index element={<TodaysBatchPage />} />
+        <Route path="average-usage" element={<AverageUsagePage />} />
+        <Route path="batch-lookup" element={<BatchLookupPage />} />
+        <Route path="admin" element={<AdminRoute><BellAdminPage /></AdminRoute>} />
+      </Route>
+
       <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
         <Route index element={<HomePage />} />
         <Route path="inventory/:category" element={<InventoryPage />} />
         <Route path="suppliers" element={<SuppliersPage />} />
         <Route path="sds" element={<SDSPage />} />
         <Route path="pallets" element={<PalletsPage />} />
-        <Route path="batch-monitoring" element={<BellLayout />}>
-          <Route index element={<TodaysBatchPage />} />
-          <Route path="average-usage" element={<AverageUsagePage />} />
-          <Route path="batch-lookup" element={<BatchLookupPage />} />
-          <Route path="admin" element={<AdminRoute><BellAdminPage /></AdminRoute>} />
-        </Route>
         <Route path="order-forms" element={<OrderFormsPage />} />
         <Route path="purchase-orders" element={<PurchaseOrdersPage />} />
         <Route path="reports" element={<ReportsPage />} />
