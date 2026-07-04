@@ -180,7 +180,9 @@ export function BatchEntryPage() {
       onClick={() => inputRef.current?.focus()}
     >
       {/* Logo */}
-      <img src="/Bell.png" alt="BELL" style={{ height: 52, objectFit: 'contain' }} />
+      <div className="w-full max-w-2xl px-6">
+        <img src="/Bell.png" alt="BELL" className="w-full" style={{ objectFit: 'contain', height: 64 }} />
+      </div>
 
       {/* Title */}
       <div className="text-center space-y-1">
