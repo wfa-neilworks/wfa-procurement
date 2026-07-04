@@ -228,8 +228,8 @@ function GroupedTable({
   onEdit: (r: BatchReference) => void
   onDelete: (r: BatchReference) => void
 }) {
-  const [expanded, setExpanded] = useState<Record<string, boolean>>({})
-  const toggle = (slug: string) => setExpanded(p => ({ ...p, [slug]: !p[slug] }))
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({})
+  const toggle = (slug: string) => setCollapsed(p => ({ ...p, [slug]: !p[slug] }))
 
   const renderRows = (catRows: BatchReference[]) => (
     <table className="w-full text-sm">
@@ -297,7 +297,7 @@ function GroupedTable({
     <div className="space-y-3">
       {CATEGORIES.map(cat => {
         const catRows = rows.filter(r => r.category === cat.slug)
-        const isOpen = expanded[cat.slug] ?? true
+        const isOpen = !collapsed[cat.slug]
         return (
           <div key={cat.slug} className="rounded-xl overflow-hidden" style={{ border: '1px solid #1e3a5a' }}>
             <button
@@ -322,7 +322,7 @@ function GroupedTable({
       {(() => {
         const uncategorised = rows.filter(r => !r.category)
         if (uncategorised.length === 0) return null
-        const isOpen = expanded['__none__'] ?? true
+        const isOpen = !collapsed['__none__']
         return (
           <div className="rounded-xl overflow-hidden" style={{ border: '1px solid #1e3a5a' }}>
             <button
