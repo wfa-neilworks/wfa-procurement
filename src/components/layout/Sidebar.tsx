@@ -14,31 +14,38 @@ import {
   FileCheck,
   Menu,
   X,
-  ScanBarcode
+  ScanBarcode,
+  ShieldCheck,
 } from 'lucide-react'
 import { cn } from '../../lib/utils'
+import { useAuth } from '../../hooks/useAuth'
 
 const navigation = [
-  { name: 'Home', to: '/', icon: Home },
+  { name: 'Home', to: '/', icon: Home, section: 'home' },
   {
     name: 'Inventory',
     icon: Package,
+    section: 'inventory',
     children: [
       { name: 'Cartons and Lids', to: '/inventory/cartons-and-lids' },
       { name: 'Shrinkbags', to: '/inventory/shrinkbags' },
       { name: 'Carcass Bags', to: '/inventory/carcass-bags' },
       { name: 'Soakerpads, Liner, Strapping', to: '/inventory/soakerpads-liner-strapping' },
       { name: 'Other', to: '/inventory/other' },
-    ]
+    ],
   },
-  { name: 'Pallets', to: '/pallets', icon: Boxes },
-  { name: 'Batch Monitoring', to: '/batch-monitoring', icon: ScanBarcode },
-  { name: 'SDS', to: '/sds', icon: FileText },
-  { name: 'Suppliers', to: '/suppliers', icon: Users },
-  { name: 'Order Forms', to: '/order-forms', icon: FileCheck },
-  { name: 'Purchase Orders', to: '/purchase-orders', icon: ShoppingCart },
-  { name: 'Reports', to: '/reports', icon: BarChart3 },
-  { name: 'Settings', to: '/settings', icon: Settings },
+  { name: 'Pallets', to: '/pallets', icon: Boxes, section: 'pallets' },
+  { name: 'Batch Monitoring', to: '/batch-monitoring', icon: ScanBarcode, section: 'batch-monitoring' },
+  { name: 'SDS', to: '/sds', icon: FileText, section: 'sds' },
+  { name: 'Suppliers', to: '/suppliers', icon: Users, section: 'suppliers' },
+  { name: 'Order Forms', to: '/order-forms', icon: FileCheck, section: 'order-forms' },
+  { name: 'Purchase Orders', to: '/purchase-orders', icon: ShoppingCart, section: 'purchase-orders' },
+  { name: 'Reports', to: '/reports', icon: BarChart3, section: 'reports' },
+  { name: 'Settings', to: '/settings', icon: Settings, section: 'settings' },
+]
+
+const adminNavigation = [
+  { name: 'Manage Users', to: '/admin/users', icon: ShieldCheck, section: 'admin' },
 ]
 
 interface SidebarProps {
@@ -48,16 +55,22 @@ interface SidebarProps {
 
 export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
   const [inventoryOpen, setInventoryOpen] = useState(true)
+  const { can, isAdmin } = useAuth()
+
+  const visibleNav = navigation.filter((item) => can(item.section))
 
   return (
-    <aside className={cn(
-      "fixed left-0 top-0 h-full text-white border-r overflow-y-auto shadow-lg transition-all duration-300",
-      isCollapsed ? "w-16" : "w-64"
-    )} style={{backgroundColor: '#28363D', borderColor: '#2F575D'}}>
-      <div className={cn(
-        "border-b flex items-center justify-between",
-        isCollapsed ? "p-3" : "p-6"
-      )} style={{borderColor: 'rgba(255,255,255,0.1)'}}>
+    <aside
+      className={cn(
+        'fixed left-0 top-0 h-full text-white border-r overflow-y-auto shadow-lg transition-all duration-300',
+        isCollapsed ? 'w-16' : 'w-64'
+      )}
+      style={{ backgroundColor: '#28363D', borderColor: '#2F575D' }}
+    >
+      <div
+        className={cn('border-b flex items-center justify-between', isCollapsed ? 'p-3' : 'p-6')}
+        style={{ borderColor: 'rgba(255,255,255,0.1)' }}
+      >
         {!isCollapsed && (
           <div>
             <h1 className="text-2xl font-bold">WFA Procurement</h1>
@@ -66,43 +79,31 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
         )}
         <button
           onClick={onToggle}
-          className={cn(
-            "p-2 rounded-lg hover:bg-white/10 transition-colors",
-            isCollapsed && "mx-auto"
-          )}
-          title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          className={cn('p-2 rounded-lg hover:bg-white/10 transition-colors', isCollapsed && 'mx-auto')}
+          title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
-          {isCollapsed ? (
-            <Menu className="h-5 w-5" />
-          ) : (
-            <X className="h-5 w-5" />
-          )}
+          {isCollapsed ? <Menu className="h-5 w-5" /> : <X className="h-5 w-5" />}
         </button>
       </div>
 
-      <nav className="px-3 pb-6">
-        {navigation.map((item) => (
+      <nav className="px-3 pb-4 pt-2 flex-1">
+        {visibleNav.map((item) => (
           <div key={item.name} className="mb-1">
-            {item.to ? (
+            {'to' in item && item.to ? (
               <NavLink
                 to={item.to}
+                end={item.to === '/'}
                 className={({ isActive }) =>
                   cn(
-                    "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all",
-                    isActive
-                      ? "shadow-sm"
-                      : "opacity-80 hover:opacity-100",
-                    isCollapsed && "justify-center"
+                    'flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all',
+                    isActive ? 'shadow-sm' : 'opacity-80 hover:opacity-100',
+                    isCollapsed && 'justify-center'
                   )
                 }
-                style={({ isActive }: { isActive: boolean }) =>
-                  isActive
-                    ? { backgroundColor: '#6D9197', color: 'white' }
-                    : {}
-                }
+                style={({ isActive }) => (isActive ? { backgroundColor: '#6D9197', color: 'white' } : {})}
                 title={isCollapsed ? item.name : undefined}
               >
-                {item.icon && <item.icon className="h-4 w-4" />}
+                {item.icon && <item.icon className="h-4 w-4 shrink-0" />}
                 {!isCollapsed && item.name}
               </NavLink>
             ) : (
@@ -110,25 +111,21 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
                 <button
                   onClick={() => setInventoryOpen(!inventoryOpen)}
                   className={cn(
-                    "flex items-center w-full gap-3 px-3 py-2 text-sm font-medium text-white hover:opacity-100 opacity-80 transition-all rounded-lg",
-                    isCollapsed ? "justify-center" : "justify-between"
+                    'flex items-center w-full gap-3 px-3 py-2 text-sm font-medium text-white hover:opacity-100 opacity-80 transition-all rounded-lg',
+                    isCollapsed ? 'justify-center' : 'justify-between'
                   )}
                   title={isCollapsed ? item.name : undefined}
                 >
-                  <div className={cn(
-                    "flex items-center gap-3",
-                    isCollapsed && "justify-center"
-                  )}>
-                    {item.icon && <item.icon className="h-4 w-4" />}
+                  <div className={cn('flex items-center gap-3', isCollapsed && 'justify-center')}>
+                    {item.icon && <item.icon className="h-4 w-4 shrink-0" />}
                     {!isCollapsed && item.name}
                   </div>
-                  {!isCollapsed && (
-                    inventoryOpen ? (
+                  {!isCollapsed &&
+                    (inventoryOpen ? (
                       <ChevronDown className="h-4 w-4" />
                     ) : (
                       <ChevronRight className="h-4 w-4" />
-                    )
-                  )}
+                    ))}
                 </button>
                 {inventoryOpen && !isCollapsed && (
                   <div className="ml-4 mt-1 space-y-1">
@@ -138,17 +135,11 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
                         to={child.to}
                         className={({ isActive }) =>
                           cn(
-                            "block px-3 py-1.5 rounded-lg text-sm transition-all",
-                            isActive
-                              ? "font-medium shadow-sm"
-                              : "opacity-70 hover:opacity-100"
+                            'block px-3 py-1.5 rounded-lg text-sm transition-all',
+                            isActive ? 'font-medium shadow-sm' : 'opacity-70 hover:opacity-100'
                           )
                         }
-                        style={({ isActive }: { isActive: boolean }) =>
-                          isActive
-                            ? { backgroundColor: '#6D9197', color: 'white' }
-                            : {}
-                        }
+                        style={({ isActive }) => (isActive ? { backgroundColor: '#6D9197', color: 'white' } : {})}
                       >
                         {child.name}
                       </NavLink>
@@ -160,6 +151,36 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
           </div>
         ))}
       </nav>
+
+      {/* Admin section */}
+      {isAdmin && (
+        <div className="px-3 pb-6" style={{ borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+          {!isCollapsed && (
+            <p className="text-xs font-semibold uppercase tracking-wider opacity-50 px-3 pt-4 pb-2">
+              Admin
+            </p>
+          )}
+          {isCollapsed && <div className="pt-3" />}
+          {adminNavigation.map((item) => (
+            <NavLink
+              key={item.name}
+              to={item.to}
+              className={({ isActive }) =>
+                cn(
+                  'flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all',
+                  isActive ? 'shadow-sm' : 'opacity-80 hover:opacity-100',
+                  isCollapsed && 'justify-center'
+                )
+              }
+              style={({ isActive }) => (isActive ? { backgroundColor: '#6D9197', color: 'white' } : {})}
+              title={isCollapsed ? item.name : undefined}
+            >
+              <item.icon className="h-4 w-4 shrink-0" />
+              {!isCollapsed && item.name}
+            </NavLink>
+          ))}
+        </div>
+      )}
     </aside>
   )
 }

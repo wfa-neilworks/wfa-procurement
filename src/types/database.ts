@@ -280,6 +280,29 @@ export interface Database {
           created_at?: string
         }
       }
+      user_profiles: {
+        Row: {
+          id: string
+          full_name: string | null
+          role: 'admin' | 'user'
+          permissions: string[]
+          created_at: string
+        }
+        Insert: {
+          id: string
+          full_name?: string | null
+          role?: 'admin' | 'user'
+          permissions?: string[]
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          full_name?: string | null
+          role?: 'admin' | 'user'
+          permissions?: string[]
+          created_at?: string
+        }
+      }
       purchase_orders: {
         Row: {
           id: string
