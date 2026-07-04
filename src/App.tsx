@@ -82,9 +82,9 @@ function AppRoutes() {
 
       <Route path="/batch-monitoring" element={<ProtectedRoute><BellLayout /></ProtectedRoute>}>
         <Route path="entry" element={<BatchEntryPage />} />
-        <Route index element={<TodaysBatchPage />} />
-        <Route path="average-usage" element={<AverageUsagePage />} />
-        <Route path="batch-lookup" element={<BatchLookupPage />} />
+        <Route path="today/:category" element={<TodaysBatchPage />} />
+        <Route path="average-usage/:category" element={<AverageUsagePage />} />
+        <Route path="batch-lookup/:category" element={<BatchLookupPage />} />
         <Route path="admin" element={<AdminRoute><BellAdminPage /></AdminRoute>} />
       </Route>
 
