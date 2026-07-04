@@ -15,7 +15,11 @@ import { InventoryPage } from './features/inventory/InventoryPage'
 import { SuppliersPage } from './features/suppliers/SuppliersPage'
 import { SDSPage } from './features/sds/SDSPage'
 import { PalletsPage } from './features/pallets/PalletsPage'
-import { BatchMonitoringPage } from './features/batch-monitoring/BatchMonitoringPage'
+import { BellLayout } from './features/batch-monitoring/BellLayout'
+import { TodaysBatchPage } from './features/batch-monitoring/TodaysBatchPage'
+import { AverageUsagePage } from './features/batch-monitoring/AverageUsagePage'
+import { BatchLookupPage } from './features/batch-monitoring/BatchLookupPage'
+import { BellAdminPage } from './features/batch-monitoring/BellAdminPage'
 import { OrderFormsPage } from './features/order-forms/OrderFormsPage'
 import { PurchaseOrdersPage } from './features/purchase-orders/PurchaseOrdersPage'
 import { ReportsPage } from './features/reports/ReportsPage'
@@ -81,7 +85,12 @@ function AppRoutes() {
         <Route path="suppliers" element={<SuppliersPage />} />
         <Route path="sds" element={<SDSPage />} />
         <Route path="pallets" element={<PalletsPage />} />
-        <Route path="batch-monitoring" element={<BatchMonitoringPage />} />
+        <Route path="batch-monitoring" element={<BellLayout />}>
+          <Route index element={<TodaysBatchPage />} />
+          <Route path="average-usage" element={<AverageUsagePage />} />
+          <Route path="batch-lookup" element={<BatchLookupPage />} />
+          <Route path="admin" element={<AdminRoute><BellAdminPage /></AdminRoute>} />
+        </Route>
         <Route path="order-forms" element={<OrderFormsPage />} />
         <Route path="purchase-orders" element={<PurchaseOrdersPage />} />
         <Route path="reports" element={<ReportsPage />} />
