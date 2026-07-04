@@ -9,6 +9,7 @@ import { Layout } from './components/layout/Layout'
 // Auth pages
 import { LoginPage } from './features/auth/LoginPage'
 import { RegisterPage } from './features/auth/RegisterPage'
+import { PendingPage } from './features/auth/PendingPage'
 
 // App pages
 import { HomePage } from './features/home/HomePage'
@@ -33,9 +34,13 @@ const queryClient = new QueryClient({
 })
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth()
+  const { user, profile, isAdmin, loading } = useAuth()
   if (loading) return null
   if (!user) return <Navigate to="/login" replace />
+  // User has no permissions yet — send to pending screen
+  if (!isAdmin && profile && (profile.permissions ?? []).length === 0) {
+    return <Navigate to="/pending" replace />
+  }
   return <>{children}</>
 }
 
@@ -53,6 +58,7 @@ function AppRoutes() {
       {/* Public auth routes */}
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
+      <Route path="/pending" element={<PendingPage />} />
 
       {/* Protected app routes */}
       <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>

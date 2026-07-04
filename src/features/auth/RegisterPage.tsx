@@ -35,7 +35,7 @@ export function RegisterPage() {
     if (error) {
       setError(error.message)
     } else {
-      navigate('/login?registered=1')
+      navigate('/pending')
     }
   }
 
