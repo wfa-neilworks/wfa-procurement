@@ -48,14 +48,12 @@ function LoadingScreen() {
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, profile, isAdmin, loading } = useAuth()
 
+  // loading is only false after BOTH session + profile are resolved
   if (loading) return <LoadingScreen />
   if (!user) return <Navigate to="/login" replace />
 
-  // Profile missing entirely (no row in DB) — treat as pending
-  if (!profile) return <Navigate to="/pending" replace />
-
-  // Has profile but no permissions and not admin — pending
-  if (!isAdmin && profile.permissions.length === 0) {
+  // No profile row OR no permissions and not admin → pending
+  if (!isAdmin && (!profile || profile.permissions.length === 0)) {
     return <Navigate to="/pending" replace />
   }
 

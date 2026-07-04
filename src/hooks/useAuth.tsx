@@ -51,6 +51,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [session, setSession] = useState<Session | null>(null)
+  // loading stays true until BOTH session check AND profile fetch are done
   const [loading, setLoading] = useState(true)
 
   const refreshProfile = async () => {
@@ -63,16 +64,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let mounted = true
 
-    // Safety timeout — if auth hasn't resolved in 5s, stop loading anyway
-    const timeout = setTimeout(() => {
-      if (mounted && loading) {
-        setLoading(false)
-      }
-    }, 5000)
+    async function init() {
+      // Get the current session directly
+      const { data: { session } } = await supabase.auth.getSession()
 
+      if (!mounted) return
+
+      setSession(session)
+      setUser(session?.user ?? null)
+
+      if (session?.user) {
+        // Fetch profile — loading stays true until this resolves
+        const p = await fetchProfile(session.user.id)
+        if (mounted) setProfile(p)
+      }
+
+      // Only set loading false AFTER both session + profile are resolved
+      if (mounted) setLoading(false)
+    }
+
+    init()
+
+    // Listen for subsequent auth changes (login, logout, token refresh)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (!mounted) return
+        // Skip initial — handled by init() above
+        if (event === 'INITIAL_SESSION') return
 
         setSession(session)
         setUser(session?.user ?? null)
@@ -84,16 +102,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setProfile(null)
         }
 
-        if (mounted) {
-          setLoading(false)
-          clearTimeout(timeout)
-        }
+        if (mounted) setLoading(false)
       }
     )
 
     return () => {
       mounted = false
-      clearTimeout(timeout)
       subscription.unsubscribe()
     }
   }, [])
