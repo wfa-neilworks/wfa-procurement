@@ -181,7 +181,7 @@ export function BatchEntryPage() {
     >
       {/* Logo */}
       <div className="w-full max-w-2xl px-6">
-        <img src="/Bellv2.png" alt="BELL" style={{ width: '100%', height: 'auto', display: 'block' }} />
+        <img src="/BellV3.png" alt="BELL" style={{ width: '100%', height: 'auto', display: 'block' }} />
       </div>
 
       {/* Title */}
