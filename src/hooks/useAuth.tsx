@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, useRef } from 'react'
+import { createContext, useContext, useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import type { User, AuthError, Session } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
@@ -26,44 +26,20 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
-const PROFILE_CACHE_KEY = 'wfa-profile-cache'
-
-function getCachedProfile(): UserProfile | null {
-  try {
-    const raw = localStorage.getItem(PROFILE_CACHE_KEY)
-    if (!raw) return null
-    return JSON.parse(raw) as UserProfile
-  } catch {
-    return null
-  }
-}
-
-function setCachedProfile(p: UserProfile | null) {
-  if (p) {
-    localStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify(p))
-  } else {
-    localStorage.removeItem(PROFILE_CACHE_KEY)
-  }
-}
-
 async function fetchProfile(userId: string): Promise<UserProfile | null> {
-  try {
-    const { data } = await supabase
-      .from('user_profiles')
-      .select('id, full_name, role, permissions, created_at')
-      .eq('id', userId)
-      .single() as any
+  const { data } = await supabase
+    .from('user_profiles')
+    .select('id, full_name, role, permissions, created_at')
+    .eq('id', userId)
+    .single() as any
 
-    if (!data) return null
-    return {
-      id: data.id,
-      full_name: data.full_name ?? null,
-      role: data.role ?? 'user',
-      permissions: Array.isArray(data.permissions) ? data.permissions : [],
-      created_at: data.created_at,
-    }
-  } catch {
-    return null
+  if (!data) return null
+  return {
+    id: data.id,
+    full_name: data.full_name ?? null,
+    role: data.role ?? 'user',
+    permissions: Array.isArray(data.permissions) ? data.permissions : [],
+    created_at: data.created_at,
   }
 }
 
@@ -72,87 +48,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [session, setSession] = useState<Session | null>(null)
   const [loading, setLoading] = useState(true)
-  const resolvedRef = useRef(false)
 
   const refreshProfile = async () => {
-    const { data: { session: s } } = await supabase.auth.getSession()
-    if (!s?.user) return
-    const p = await fetchProfile(s.user.id)
-    setCachedProfile(p)
+    if (!user) return
+    const p = await fetchProfile(user.id)
     setProfile(p)
   }
 
   useEffect(() => {
-    const mounted = { current: true }
-
-    async function handleSession(s: Session | null) {
-      if (!mounted.current) return
-
-      setSession(s)
-      setUser(s?.user ?? null)
-
-      if (!s?.user) {
-        setCachedProfile(null)
-        setProfile(null)
-        if (mounted.current) setLoading(false)
-        return
-      }
-
-      // Show cached profile immediately so the app unblocks right away
-      const cached = getCachedProfile()
-      if (cached && cached.id === s.user.id) {
-        setProfile(cached)
-        if (mounted.current) setLoading(false)
-      }
-
-      // Then fetch fresh profile in background and update
-      const fresh = await fetchProfile(s.user.id)
-      if (mounted.current) {
-        setCachedProfile(fresh)
-        setProfile(fresh)
-        // If there was no cache, this is when loading becomes false
-        if (mounted.current) setLoading(false)
-      }
-    }
-
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        if (!mounted.current) return
+        setSession(session)
+        setUser(session?.user ?? null)
 
-        if (event === 'INITIAL_SESSION') {
-          if (!resolvedRef.current) {
-            resolvedRef.current = true
-            await handleSession(session)
-          }
-          return
+        if (session?.user) {
+          const p = await fetchProfile(session.user.id)
+          setProfile(p)
+        } else {
+          setProfile(null)
         }
 
-        // SIGNED_IN, SIGNED_OUT, TOKEN_REFRESHED, etc.
-        resolvedRef.current = true
-        await handleSession(session)
+        setLoading(false)
       }
     )
 
-    // Fallback: if INITIAL_SESSION never fires, use getSession after 2s
-    const fallback = setTimeout(async () => {
-      if (!resolvedRef.current && mounted.current) {
-        resolvedRef.current = true
-        const { data: { session } } = await supabase.auth.getSession()
-        await handleSession(session)
-      }
-    }, 2000)
-
-    // Hard stop: loading cannot stay true past 5s no matter what
-    const hardStop = setTimeout(() => {
-      if (mounted.current) setLoading(false)
-    }, 5000)
-
-    return () => {
-      mounted.current = false
-      subscription.unsubscribe()
-      clearTimeout(fallback)
-      clearTimeout(hardStop)
-    }
+    return () => subscription.unsubscribe()
   }, [])
 
   const signIn = async (email: string, password: string) => {
@@ -167,24 +87,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const userId = data.user?.id ?? data.session?.user?.id
     if (!userId) return { error: null }
 
-    const { error: insertError } = await supabase
+    await supabase
       .from('user_profiles')
-      .insert({ id: userId, full_name: fullName, role: 'user', permissions: [] } as any)
-
-    if (insertError) {
-      await supabase
-        .from('user_profiles')
-        .upsert({ id: userId, full_name: fullName, role: 'user', permissions: [] } as any)
-    }
+      .upsert({ id: userId, full_name: fullName, role: 'user', permissions: [] } as any)
 
     return { error: null }
   }
 
   const signOut = async () => {
-    setCachedProfile(null)
-    setUser(null)
-    setProfile(null)
-    setSession(null)
     await supabase.auth.signOut()
   }
 
