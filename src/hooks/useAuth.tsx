@@ -56,42 +56,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (event === 'TOKEN_REFRESHED' && !session) {
-          // Refresh failed — clear everything and send to login
-          setUser(null)
-          setProfile(null)
-          setSession(null)
-          setLoading(false)
-          return
-        }
-
-        setSession(session)
-        setUser(session?.user ?? null)
-
-        if (session?.user) {
-          const p = await fetchProfile(session.user.id)
-          setProfile(p)
-        } else {
-          setProfile(null)
-        }
-
-        setLoading(false)
+    supabase.auth.getSession().then(async ({ data }) => {
+      const s = data.session
+      setSession(s)
+      setUser(s?.user ?? null)
+      if (s?.user) {
+        const p = await fetchProfile(s.user.id)
+        setProfile(p)
       }
-    )
-
-    // If onAuthStateChange never fires (e.g. token refresh hangs), unblock after 4s
-    const timeout = setTimeout(() => setLoading(false), 4000)
-
-    return () => {
-      subscription.unsubscribe()
-      clearTimeout(timeout)
-    }
+      setLoading(false)
+    })
   }, [])
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+    if (!error && data.session) {
+      setSession(data.session)
+      setUser(data.session.user)
+      const p = await fetchProfile(data.session.user.id)
+      setProfile(p)
+    }
     return { error }
   }
 
@@ -111,6 +95,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = async () => {
     await supabase.auth.signOut()
+    setUser(null)
+    setProfile(null)
+    setSession(null)
   }
 
   const isAdmin = profile?.role === 'admin'
