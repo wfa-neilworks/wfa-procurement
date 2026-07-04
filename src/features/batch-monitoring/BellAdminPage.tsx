@@ -219,129 +219,163 @@ function EditModal({
   )
 }
 
+function ProductGroup({
+  productCode,
+  productName,
+  supplierRows,
+  onEdit,
+  onDelete,
+  onAddSupplier,
+}: {
+  productCode: string
+  productName: string
+  supplierRows: BatchReference[]
+  onEdit: (r: BatchReference) => void
+  onDelete: (r: BatchReference) => void
+  onAddSupplier: (productCode: string, productName: string, category: string | null) => void
+}) {
+  const [collapsed, setCollapsed] = useState(false)
+
+  return (
+    <div className="rounded-lg overflow-hidden" style={{ border: '1px solid #0f2a3a' }}>
+      {/* Product header */}
+      <div
+        className="flex items-center justify-between px-4 py-2.5 cursor-pointer"
+        style={{ backgroundColor: '#0a1a2a' }}
+        onClick={() => setCollapsed(c => !c)}
+      >
+        <div className="flex items-center gap-3">
+          {collapsed ? <ChevronRight className="h-3.5 w-3.5 opacity-40" /> : <ChevronDown className="h-3.5 w-3.5 opacity-40" />}
+          <span className="font-mono text-xs font-semibold" style={{ color: '#6ab0d4' }}>{productCode}</span>
+          <span className="text-sm text-white">{productName}</span>
+        </div>
+        <button
+          onClick={e => { e.stopPropagation(); onAddSupplier(productCode, productName, supplierRows[0]?.category ?? null) }}
+          className="flex items-center gap-1 px-2 py-1 rounded text-xs font-medium transition-all hover:bg-white/10"
+          style={{ color: '#4a9fd4', border: '1px solid #1e3a5a' }}
+        >
+          <Plus className="h-3 w-3" /> Add Supplier
+        </button>
+      </div>
+
+      {/* Supplier rows */}
+      {!collapsed && (
+        <div className="divide-y" style={{ borderColor: '#0a1e2e' }}>
+          {supplierRows.map(row => (
+            <div key={row.id} className="flex items-start gap-4 px-6 py-3" style={{ backgroundColor: '#060e18' }}>
+              {/* Supplier */}
+              <div className="w-36 shrink-0">
+                <div className="text-xs font-medium text-white">{row.supplier_name ?? <span style={{ color: '#2a4a6a' }}>No supplier</span>}</div>
+              </div>
+              {/* Format mask */}
+              <div className="w-48 shrink-0">
+                {row.format_mask
+                  ? <span className="font-mono text-xs px-1.5 py-0.5 rounded" style={{ backgroundColor: '#0a1a2a', color: '#4a9fd4' }}>{row.format_mask}</span>
+                  : <span className="text-xs" style={{ color: '#2a4a6a' }}>No mask</span>}
+              </div>
+              {/* Batch refs */}
+              <div className="flex-1 flex flex-wrap gap-1">
+                {row.batch_references.length === 0
+                  ? <span className="text-xs" style={{ color: '#2a4a6a' }}>No references yet</span>
+                  : row.batch_references.slice(0, 6).map(ref => (
+                    <span key={ref} className="px-1.5 py-0.5 rounded text-xs font-mono" style={{ backgroundColor: '#0a1a2a', color: '#4a9fd4' }}>
+                      {ref}
+                    </span>
+                  ))}
+                {row.batch_references.length > 6 && (
+                  <span className="text-xs" style={{ color: '#2a5a7a' }}>+{row.batch_references.length - 6} more</span>
+                )}
+              </div>
+              {/* Actions */}
+              <div className="flex items-center gap-1 shrink-0">
+                <button onClick={() => onEdit(row)} className="p-1.5 rounded hover:bg-white/5" style={{ color: '#4a7aaa' }}>
+                  <Pencil className="h-3.5 w-3.5" />
+                </button>
+                <button onClick={() => onDelete(row)} className="p-1.5 rounded hover:bg-red-500/10" style={{ color: '#7a3a3a' }}>
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 function GroupedTable({
   rows,
   onEdit,
   onDelete,
+  onAddSupplier,
 }: {
   rows: BatchReference[]
   onEdit: (r: BatchReference) => void
   onDelete: (r: BatchReference) => void
+  onAddSupplier: (productCode: string, productName: string, category: string | null) => void
 }) {
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({})
   const toggle = (slug: string) => setCollapsed(p => ({ ...p, [slug]: !p[slug] }))
 
-  const renderRows = (catRows: BatchReference[]) => (
-    <table className="w-full text-sm">
-      <thead>
-        <tr style={{ borderBottom: '1px solid #1e3a5a' }}>
-          <th className="text-left px-4 py-2 text-xs font-medium" style={{ color: '#3a6a8a' }}>Code</th>
-          <th className="text-left px-4 py-2 text-xs font-medium" style={{ color: '#3a6a8a' }}>Product Name</th>
-          <th className="text-left px-4 py-2 text-xs font-medium" style={{ color: '#3a6a8a' }}>Supplier</th>
-          <th className="text-left px-4 py-2 text-xs font-medium" style={{ color: '#3a6a8a' }}>Format Mask</th>
-          <th className="text-left px-4 py-2 text-xs font-medium" style={{ color: '#3a6a8a' }}>Batch References</th>
-          <th className="px-4 py-2 w-20" />
-        </tr>
-      </thead>
-      <tbody>
-        {catRows.length === 0 ? (
-          <tr>
-            <td colSpan={5} className="px-4 py-4 text-xs text-center" style={{ color: '#2a4a6a' }}>No entries</td>
-          </tr>
-        ) : catRows.map(row => (
-          <tr key={row.id} style={{ borderTop: '1px solid #0f2035' }}>
-            <td className="px-4 py-2.5 font-mono text-xs" style={{ color: '#6ab0d4' }}>{row.product_code}</td>
-            <td className="px-4 py-2.5 text-white">{row.product_name}</td>
-            <td className="px-4 py-2.5 text-xs" style={{ color: '#4a8aaa' }}>
-              {row.supplier_name ?? <span style={{ color: '#2a4a6a' }}>—</span>}
-            </td>
-            <td className="px-4 py-2.5">
-              {row.format_mask
-                ? <span className="font-mono text-xs px-1.5 py-0.5 rounded" style={{ backgroundColor: '#0a1a2a', color: '#4a9fd4' }}>{row.format_mask}</span>
-                : <span style={{ color: '#2a4a6a', fontSize: '0.75rem' }}>—</span>}
-            </td>
-            <td className="px-4 py-2.5">
-              <div className="flex flex-wrap gap-1">
-                {row.batch_references.slice(0, 4).map(ref => (
-                  <span key={ref} className="px-1.5 py-0.5 rounded text-xs font-mono" style={{ backgroundColor: '#0a1a2a', color: '#4a9fd4' }}>
-                    {ref}
-                  </span>
-                ))}
-                {row.batch_references.length > 4 && (
-                  <span className="px-1.5 py-0.5 rounded text-xs" style={{ color: '#2a5a7a' }}>
-                    +{row.batch_references.length - 4} more
-                  </span>
-                )}
-                {row.batch_references.length === 0 && (
-                  <span style={{ color: '#2a4a6a', fontSize: '0.75rem' }}>No references yet</span>
-                )}
-              </div>
-            </td>
-            <td className="px-4 py-2.5">
-              <div className="flex items-center justify-end gap-1">
-                <button onClick={() => onEdit(row)} className="p-1.5 rounded-lg hover:bg-white/5" style={{ color: '#4a7aaa' }}>
-                  <Pencil className="h-3.5 w-3.5" />
-                </button>
-                <button onClick={() => onDelete(row)} className="p-1.5 rounded-lg hover:bg-red-500/10" style={{ color: '#7a3a3a' }}>
-                  <Trash2 className="h-3.5 w-3.5" />
-                </button>
-              </div>
-            </td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
-  )
+  const renderCategory = (catRows: BatchReference[], label: string, slug: string) => {
+    // Group by product_code
+    const productMap = new Map<string, BatchReference[]>()
+    for (const row of catRows) {
+      const existing = productMap.get(row.product_code) ?? []
+      productMap.set(row.product_code, [...existing, row])
+    }
+    const products = Array.from(productMap.entries())
+    const isOpen = !collapsed[slug]
+    const uniqueProducts = products.length
+
+    return (
+      <div key={slug} className="rounded-xl overflow-hidden" style={{ border: '1px solid #1e3a5a' }}>
+        <button
+          onClick={() => toggle(slug)}
+          className="flex items-center justify-between w-full px-4 py-3 text-sm font-semibold text-white"
+          style={{ backgroundColor: '#0d1e30' }}
+        >
+          <div className="flex items-center gap-2">
+            {isOpen ? <ChevronDown className="h-4 w-4 opacity-50" /> : <ChevronRight className="h-4 w-4 opacity-50" />}
+            {label}
+          </div>
+          <span className="text-xs font-normal px-2 py-0.5 rounded-full" style={{ backgroundColor: '#1a3a5a', color: '#6ab0d4' }}>
+            {uniqueProducts} products · {catRows.length} entries
+          </span>
+        </button>
+
+        {isOpen && (
+          <div className="p-2 space-y-1" style={{ backgroundColor: '#080d18' }}>
+            {/* Column headers */}
+            <div className="flex items-center gap-4 px-6 py-1 text-xs font-medium" style={{ color: '#2a5a7a' }}>
+              <div className="w-36 shrink-0">Supplier</div>
+              <div className="w-48 shrink-0">Format Mask</div>
+              <div className="flex-1">Batch References</div>
+              <div className="w-16 shrink-0" />
+            </div>
+            {products.length === 0
+              ? <div className="px-4 py-4 text-xs text-center" style={{ color: '#2a4a6a' }}>No entries</div>
+              : products.map(([code, supplierRows]) => (
+                <ProductGroup
+                  key={code}
+                  productCode={code}
+                  productName={supplierRows[0].product_name}
+                  supplierRows={supplierRows}
+                  onEdit={onEdit}
+                  onDelete={onDelete}
+                  onAddSupplier={onAddSupplier}
+                />
+              ))}
+          </div>
+        )}
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-3">
-      {CATEGORIES.map(cat => {
-        const catRows = rows.filter(r => r.category === cat.slug)
-        const isOpen = !collapsed[cat.slug]
-        return (
-          <div key={cat.slug} className="rounded-xl overflow-hidden" style={{ border: '1px solid #1e3a5a' }}>
-            <button
-              onClick={() => toggle(cat.slug)}
-              className="flex items-center justify-between w-full px-4 py-3 text-sm font-semibold text-white"
-              style={{ backgroundColor: '#0d1e30' }}
-            >
-              <div className="flex items-center gap-2">
-                {isOpen ? <ChevronDown className="h-4 w-4 opacity-50" /> : <ChevronRight className="h-4 w-4 opacity-50" />}
-                {cat.label}
-              </div>
-              <span className="text-xs font-normal px-2 py-0.5 rounded-full" style={{ backgroundColor: '#1a3a5a', color: '#6ab0d4' }}>
-                {catRows.length}
-              </span>
-            </button>
-            {isOpen && renderRows(catRows)}
-          </div>
-        )
-      })}
-
-      {/* Uncategorised */}
-      {(() => {
-        const uncategorised = rows.filter(r => !r.category)
-        if (uncategorised.length === 0) return null
-        const isOpen = !collapsed['__none__']
-        return (
-          <div className="rounded-xl overflow-hidden" style={{ border: '1px solid #1e3a5a' }}>
-            <button
-              onClick={() => toggle('__none__')}
-              className="flex items-center justify-between w-full px-4 py-3 text-sm font-semibold"
-              style={{ backgroundColor: '#0d1e30', color: '#4a6a7a' }}
-            >
-              <div className="flex items-center gap-2">
-                {isOpen ? <ChevronDown className="h-4 w-4 opacity-50" /> : <ChevronRight className="h-4 w-4 opacity-50" />}
-                Uncategorised
-              </div>
-              <span className="text-xs font-normal px-2 py-0.5 rounded-full" style={{ backgroundColor: '#1a3a5a', color: '#6ab0d4' }}>
-                {uncategorised.length}
-              </span>
-            </button>
-            {isOpen && renderRows(uncategorised)}
-          </div>
-        )
-      })()}
+      {CATEGORIES.map(cat => renderCategory(rows.filter(r => r.category === cat.slug), cat.label, cat.slug))}
+      {rows.filter(r => !r.category).length > 0 && renderCategory(rows.filter(r => !r.category), 'Uncategorised', '__none__')}
     </div>
   )
 }
@@ -374,6 +408,11 @@ export function BellAdminPage() {
     fetchAll()
   }
 
+  const handleAddSupplier = (productCode: string, productName: string, category: string | null) => {
+    setEditRow({ product_code: productCode, product_name: productName, category })
+    setShowModal(true)
+  }
+
   return (
     <div className="p-6 space-y-5" style={{ color: 'white' }}>
       <div className="flex items-center justify-between">
@@ -400,6 +439,7 @@ export function BellAdminPage() {
           rows={rows}
           onEdit={r => { setEditRow(r); setShowModal(true) }}
           onDelete={handleDelete}
+          onAddSupplier={handleAddSupplier}
         />
       )}
 
