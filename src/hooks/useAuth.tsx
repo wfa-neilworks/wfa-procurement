@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from 'react'
+import { createContext, useContext, useEffect, useState, useRef } from 'react'
 import type { ReactNode } from 'react'
 import type { User, AuthError, Session } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
@@ -51,8 +51,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [session, setSession] = useState<Session | null>(null)
-  // loading stays true until BOTH session check AND profile fetch are done
   const [loading, setLoading] = useState(true)
+  const initialSessionHandled = useRef(false)
 
   const refreshProfile = async () => {
     const { data: { session: s } } = await supabase.auth.getSession()
@@ -64,34 +64,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let mounted = true
 
-    async function init() {
-      // Get the current session directly
-      const { data: { session } } = await supabase.auth.getSession()
-
-      if (!mounted) return
-
-      setSession(session)
-      setUser(session?.user ?? null)
-
-      if (session?.user) {
-        // Fetch profile — loading stays true until this resolves
-        const p = await fetchProfile(session.user.id)
-        if (mounted) setProfile(p)
-      }
-
-      // Only set loading false AFTER both session + profile are resolved
-      if (mounted) setLoading(false)
-    }
-
-    init()
-
-    // Listen for subsequent auth changes (login, logout, token refresh)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (!mounted) return
-        // Skip initial — handled by init() above
-        if (event === 'INITIAL_SESSION') return
 
+        if (event === 'INITIAL_SESSION') {
+          // This fires once on load with the persisted session (or null)
+          initialSessionHandled.current = true
+          setSession(session)
+          setUser(session?.user ?? null)
+
+          if (session?.user) {
+            const p = await fetchProfile(session.user.id)
+            if (mounted) setProfile(p)
+          }
+
+          if (mounted) setLoading(false)
+          return
+        }
+
+        // Subsequent auth events (SIGNED_IN, SIGNED_OUT, TOKEN_REFRESHED, etc.)
         setSession(session)
         setUser(session?.user ?? null)
 
@@ -106,9 +98,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     )
 
+    // Safety timeout: if INITIAL_SESSION never fires within 5s, unblock the app
+    const timeout = setTimeout(() => {
+      if (mounted && !initialSessionHandled.current) {
+        setLoading(false)
+      }
+    }, 5000)
+
     return () => {
       mounted = false
       subscription.unsubscribe()
+      clearTimeout(timeout)
     }
   }, [])
 
