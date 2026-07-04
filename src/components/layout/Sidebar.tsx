@@ -42,11 +42,9 @@ const navigation = [
   { name: 'Purchase Orders', to: '/purchase-orders', icon: ShoppingCart, section: 'purchase-orders' },
   { name: 'Reports', to: '/reports', icon: BarChart3, section: 'reports' },
   { name: 'Settings', to: '/settings', icon: Settings, section: 'settings' },
-]
-
-const adminNavigation = [
   { name: 'Manage Users', to: '/admin/users', icon: ShieldCheck, section: 'admin' },
 ]
+
 
 interface SidebarProps {
   isCollapsed: boolean
@@ -86,7 +84,7 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
         </button>
       </div>
 
-      <nav className="px-3 pb-4 pt-2 flex-1">
+      <nav className="px-3 pb-6 pt-2">
         {visibleNav.map((item) => (
           <div key={item.name} className="mb-1">
             {'to' in item && item.to ? (
@@ -152,35 +150,6 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
         ))}
       </nav>
 
-      {/* Admin section */}
-      {isAdmin && (
-        <div className="px-3 pb-6" style={{ borderTop: '1px solid rgba(255,255,255,0.1)' }}>
-          {!isCollapsed && (
-            <p className="text-xs font-semibold uppercase tracking-wider opacity-50 px-3 pt-4 pb-2">
-              Admin
-            </p>
-          )}
-          {isCollapsed && <div className="pt-3" />}
-          {adminNavigation.map((item) => (
-            <NavLink
-              key={item.name}
-              to={item.to}
-              className={({ isActive }) =>
-                cn(
-                  'flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all',
-                  isActive ? 'shadow-sm' : 'opacity-80 hover:opacity-100',
-                  isCollapsed && 'justify-center'
-                )
-              }
-              style={({ isActive }) => (isActive ? { backgroundColor: '#6D9197', color: 'white' } : {})}
-              title={isCollapsed ? item.name : undefined}
-            >
-              <item.icon className="h-4 w-4 shrink-0" />
-              {!isCollapsed && item.name}
-            </NavLink>
-          ))}
-        </div>
-      )}
     </aside>
   )
 }
