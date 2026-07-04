@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
-import { CalendarDays, BarChart2, Search, ShieldCheck } from 'lucide-react'
+import { CalendarDays, BarChart2, Search, ShieldCheck, ScanLine } from 'lucide-react'
 import { cn } from '../../lib/utils'
 import { useAuth } from '../../hooks/useAuth'
 
 const nav = [
+  { name: 'Batch Entry', to: '/batch-monitoring/entry', icon: ScanLine },
   { name: "Today's Batch", to: '/batch-monitoring', icon: CalendarDays, end: true },
   { name: 'Average Usage', to: '/batch-monitoring/average-usage', icon: BarChart2 },
   { name: 'Batch Lookup', to: '/batch-monitoring/batch-lookup', icon: Search },

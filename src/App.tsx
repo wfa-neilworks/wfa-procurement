@@ -16,6 +16,7 @@ import { SuppliersPage } from './features/suppliers/SuppliersPage'
 import { SDSPage } from './features/sds/SDSPage'
 import { PalletsPage } from './features/pallets/PalletsPage'
 import { BellLayout } from './features/batch-monitoring/BellLayout'
+import { BatchEntryPage } from './features/batch-monitoring/BatchEntryPage'
 import { TodaysBatchPage } from './features/batch-monitoring/TodaysBatchPage'
 import { AverageUsagePage } from './features/batch-monitoring/AverageUsagePage'
 import { BatchLookupPage } from './features/batch-monitoring/BatchLookupPage'
@@ -80,6 +81,7 @@ function AppRoutes() {
       <Route path="/pending" element={<PendingPage />} />
 
       <Route path="/batch-monitoring" element={<ProtectedRoute><BellLayout /></ProtectedRoute>}>
+        <Route path="entry" element={<BatchEntryPage />} />
         <Route index element={<TodaysBatchPage />} />
         <Route path="average-usage" element={<AverageUsagePage />} />
         <Route path="batch-lookup" element={<BatchLookupPage />} />
