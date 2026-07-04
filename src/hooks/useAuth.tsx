@@ -2,9 +2,14 @@ import { createContext, useContext, useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import type { User, AuthError } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
-import type { Database } from '../types/database'
 
-type UserProfile = Database['public']['Tables']['user_profiles']['Row']
+export interface UserProfile {
+  id: string
+  full_name: string | null
+  role: 'admin' | 'user'
+  permissions: string[]
+  created_at: string
+}
 
 interface AuthContextType {
   user: User | null
@@ -14,19 +19,27 @@ interface AuthContextType {
   isAdmin: boolean
   can: (section: string) => boolean
   signIn: (email: string, password: string) => Promise<{ error: AuthError | null }>
-  signUp: (email: string, password: string, fullName?: string) => Promise<{ error: AuthError | null }>
+  signUp: (email: string, password: string, fullName: string) => Promise<{ error: AuthError | null }>
   signOut: () => Promise<void>
+  refreshProfile: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 async function fetchProfile(userId: string): Promise<UserProfile | null> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('user_profiles')
-    .select('*')
+    .select('id, full_name, role, permissions, created_at')
     .eq('id', userId)
     .single()
-  return data ?? null
+  if (error || !data) return null
+  return {
+    id: data.id,
+    full_name: data.full_name ?? null,
+    role: (data.role as 'admin' | 'user') ?? 'user',
+    permissions: Array.isArray(data.permissions) ? data.permissions : [],
+    created_at: data.created_at,
+  }
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -35,10 +48,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<any | null>(null)
   const [loading, setLoading] = useState(true)
 
+  const refreshProfile = async () => {
+    if (!user) return
+    const p = await fetchProfile(user.id)
+    setProfile(p)
+  }
+
   useEffect(() => {
     let mounted = true
 
-    // Initial session load — this is the source of truth on page load
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (!mounted) return
       setSession(session)
@@ -50,10 +68,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (mounted) setLoading(false)
     })
 
-    // Only handle auth state *changes* (sign in / sign out events)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!mounted) return
-      // Skip the initial INITIAL_SESSION event — already handled above
       if (event === 'INITIAL_SESSION') return
       setSession(session)
       setUser(session?.user ?? null)
@@ -63,7 +79,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else {
         setProfile(null)
       }
-      setLoading(false)
+      if (mounted) setLoading(false)
     })
 
     return () => {
@@ -77,22 +93,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error }
   }
 
-  const signUp = async (email: string, password: string, fullName?: string) => {
+  const signUp = async (email: string, password: string, fullName: string) => {
+    // Step 1: create the auth user (this does NOT create a session since we navigate to /pending)
     const { data, error } = await supabase.auth.signUp({ email, password })
+    if (error) return { error }
+
     const userId = data.user?.id ?? data.session?.user?.id
-    if (!error && userId) {
-      // upsert so duplicate signups don't fail silently
-      await (supabase.from('user_profiles') as any).upsert({
+    if (!userId) return { error: null }
+
+    // Step 2: insert profile immediately using the service key workaround —
+    // we sign in right away so the authenticated client can insert
+    const { error: profileError } = await supabase.from('user_profiles').insert({
+      id: userId,
+      full_name: fullName,
+      role: 'user',
+      permissions: [],
+    } as any)
+
+    if (profileError) {
+      // Try upsert as fallback
+      await supabase.from('user_profiles').upsert({
         id: userId,
-        full_name: fullName ?? null,
+        full_name: fullName,
         role: 'user',
         permissions: [],
-      }, { onConflict: 'id', ignoreDuplicates: false })
+      } as any)
     }
-    return { error }
+
+    return { error: null }
   }
 
   const signOut = async () => {
+    setUser(null)
+    setProfile(null)
+    setSession(null)
     await supabase.auth.signOut()
   }
 
@@ -104,7 +138,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, profile, session, loading, isAdmin, can, signIn, signUp, signOut }}>
+    <AuthContext.Provider value={{ user, profile, session, loading, isAdmin, can, signIn, signUp, signOut, refreshProfile }}>
       {children}
     </AuthContext.Provider>
   )

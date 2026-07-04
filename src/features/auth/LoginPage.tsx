@@ -1,29 +1,40 @@
-import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
 import { Button } from '../../components/ui/button'
 import { Input } from '../../components/ui/input'
 import { LogIn } from 'lucide-react'
 
 export function LoginPage() {
-  const { signIn } = useAuth()
+  const { signIn, user, profile, isAdmin, loading } = useAuth()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const justRegistered = searchParams.get('registered') === '1'
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
+  const [signingIn, setSigningIn] = useState(false)
+
+  // Once auth + profile are loaded, route the user to the right place
+  useEffect(() => {
+    if (loading || !user || !profile) return
+    if (isAdmin || profile.permissions.length > 0) {
+      navigate('/', { replace: true })
+    } else {
+      navigate('/pending', { replace: true })
+    }
+  }, [loading, user, profile, isAdmin, navigate])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
-    setLoading(true)
+    setSigningIn(true)
     const { error } = await signIn(email, password)
-    setLoading(false)
+    setSigningIn(false)
     if (error) {
       setError(error.message)
-    } else {
-      navigate('/')
     }
+    // Navigation is handled by the useEffect above once profile loads
   }
 
   return (
@@ -42,9 +53,7 @@ export function LoginPage() {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label htmlFor="email" className="block text-sm font-medium mb-1">
-                Email
-              </label>
+              <label htmlFor="email" className="block text-sm font-medium mb-1">Email</label>
               <Input
                 id="email"
                 type="email"
@@ -57,9 +66,7 @@ export function LoginPage() {
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium mb-1">
-                Password
-              </label>
+              <label htmlFor="password" className="block text-sm font-medium mb-1">Password</label>
               <Input
                 id="password"
                 type="password"
@@ -70,6 +77,12 @@ export function LoginPage() {
               />
             </div>
 
+            {justRegistered && (
+              <div className="text-sm bg-green-50 text-green-700 border border-green-200 px-3 py-2 rounded-md">
+                Account created! Sign in to continue. An admin will grant you access.
+              </div>
+            )}
+
             {error && (
               <div className="text-sm text-destructive bg-destructive/10 px-3 py-2 rounded-md">
                 {error}
@@ -79,10 +92,10 @@ export function LoginPage() {
             <Button
               type="submit"
               className="w-full"
-              disabled={loading}
+              disabled={signingIn || loading}
               style={{ backgroundColor: '#28363D' }}
             >
-              {loading ? 'Signing in...' : 'Sign In'}
+              {signingIn || (loading && user) ? 'Signing in...' : 'Sign In'}
             </Button>
           </form>
 

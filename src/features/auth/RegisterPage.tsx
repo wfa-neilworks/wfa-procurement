@@ -6,7 +6,7 @@ import { Input } from '../../components/ui/input'
 import { UserPlus } from 'lucide-react'
 
 export function RegisterPage() {
-  const { signUp } = useAuth()
+  const { signUp, signOut } = useAuth()
   const navigate = useNavigate()
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
@@ -28,16 +28,22 @@ export function RegisterPage() {
       setError('Password must be at least 6 characters.')
       return
     }
+    if (!firstName.trim() || !lastName.trim()) {
+      setError('Please enter your first and last name.')
+      return
+    }
 
     setLoading(true)
-    const fullName = `${firstName.trim()} ${lastName.trim()}`.trim()
+    const fullName = `${firstName.trim()} ${lastName.trim()}`
     const { error } = await signUp(email, password, fullName)
     setLoading(false)
 
     if (error) {
       setError(error.message)
     } else {
-      navigate('/pending')
+      // Sign out to clear any auto-session, then go to pending
+      await signOut()
+      navigate('/login?registered=1', { replace: true })
     }
   }
 
@@ -58,9 +64,7 @@ export function RegisterPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label htmlFor="firstName" className="block text-sm font-medium mb-1">
-                  First Name
-                </label>
+                <label htmlFor="firstName" className="block text-sm font-medium mb-1">First Name</label>
                 <Input
                   id="firstName"
                   type="text"
@@ -72,9 +76,7 @@ export function RegisterPage() {
                 />
               </div>
               <div>
-                <label htmlFor="lastName" className="block text-sm font-medium mb-1">
-                  Last Name
-                </label>
+                <label htmlFor="lastName" className="block text-sm font-medium mb-1">Last Name</label>
                 <Input
                   id="lastName"
                   type="text"
@@ -87,9 +89,7 @@ export function RegisterPage() {
             </div>
 
             <div>
-              <label htmlFor="email" className="block text-sm font-medium mb-1">
-                Email
-              </label>
+              <label htmlFor="email" className="block text-sm font-medium mb-1">Email</label>
               <Input
                 id="email"
                 type="email"
@@ -101,9 +101,7 @@ export function RegisterPage() {
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium mb-1">
-                Password
-              </label>
+              <label htmlFor="password" className="block text-sm font-medium mb-1">Password</label>
               <Input
                 id="password"
                 type="password"
@@ -115,9 +113,7 @@ export function RegisterPage() {
             </div>
 
             <div>
-              <label htmlFor="confirm" className="block text-sm font-medium mb-1">
-                Confirm Password
-              </label>
+              <label htmlFor="confirm" className="block text-sm font-medium mb-1">Confirm Password</label>
               <Input
                 id="confirm"
                 type="password"

@@ -6,12 +6,10 @@ import { AuthProvider, useAuth } from './hooks/useAuth'
 import { ThemeProvider } from './hooks/useTheme'
 import { Layout } from './components/layout/Layout'
 
-// Auth pages
 import { LoginPage } from './features/auth/LoginPage'
 import { RegisterPage } from './features/auth/RegisterPage'
 import { PendingPage } from './features/auth/PendingPage'
 
-// App pages
 import { HomePage } from './features/home/HomePage'
 import { InventoryPage } from './features/inventory/InventoryPage'
 import { SuppliersPage } from './features/suppliers/SuppliersPage'
@@ -37,8 +35,10 @@ function LoadingScreen() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
       <div className="text-center space-y-3">
-        <div className="h-8 w-8 rounded-full border-4 border-muted border-t-transparent animate-spin mx-auto"
-          style={{ borderTopColor: '#2F575D' }} />
+        <div
+          className="h-8 w-8 rounded-full border-4 border-muted animate-spin mx-auto"
+          style={{ borderTopColor: '#2F575D' }}
+        />
         <p className="text-sm text-muted-foreground">Loading...</p>
       </div>
     </div>
@@ -47,17 +47,28 @@ function LoadingScreen() {
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, profile, isAdmin, loading } = useAuth()
+
+  // Still initialising — show spinner
   if (loading) return <LoadingScreen />
+
+  // Not logged in — go to login
   if (!user) return <Navigate to="/login" replace />
-  if (!isAdmin && profile && (profile.permissions ?? []).length === 0) {
+
+  // Logged in but profile not yet loaded — keep spinning briefly
+  // (profile loads right after session, this resolves in <1s)
+  if (!profile) return <LoadingScreen />
+
+  // Logged in, has profile, but no permissions and not admin — pending
+  if (!isAdmin && profile.permissions.length === 0) {
     return <Navigate to="/pending" replace />
   }
+
   return <>{children}</>
 }
 
 function AdminRoute({ children }: { children: React.ReactNode }) {
-  const { user, isAdmin, loading } = useAuth()
-  if (loading) return <LoadingScreen />
+  const { user, isAdmin, loading, profile } = useAuth()
+  if (loading || !profile) return <LoadingScreen />
   if (!user) return <Navigate to="/login" replace />
   if (!isAdmin) return <Navigate to="/" replace />
   return <>{children}</>
@@ -66,12 +77,10 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
 function AppRoutes() {
   return (
     <Routes>
-      {/* Public auth routes */}
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/pending" element={<PendingPage />} />
 
-      {/* Protected app routes */}
       <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
         <Route index element={<HomePage />} />
         <Route path="inventory/:category" element={<InventoryPage />} />
@@ -83,8 +92,6 @@ function AppRoutes() {
         <Route path="purchase-orders" element={<PurchaseOrdersPage />} />
         <Route path="reports" element={<ReportsPage />} />
         <Route path="settings" element={<SettingsPage />} />
-
-        {/* Admin-only routes */}
         <Route path="admin/users" element={<AdminRoute><AdminUsersPage /></AdminRoute>} />
       </Route>
     </Routes>
@@ -100,13 +107,7 @@ function App() {
             <AppRoutes />
           </BrowserRouter>
         </AuthProvider>
-        <Toaster
-          position="top-right"
-          expand={true}
-          richColors
-          closeButton
-          duration={4000}
-        />
+        <Toaster position="top-right" expand richColors closeButton duration={4000} />
         <ReactQueryDevtools initialIsOpen={false} />
       </ThemeProvider>
     </QueryClientProvider>
