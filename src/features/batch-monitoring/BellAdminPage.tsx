@@ -9,6 +9,13 @@ interface BatchReference {
   product_name: string
   category: string | null
   batch_references: string[]
+  supplier_id: string | null
+  supplier_name: string | null
+}
+
+interface Supplier {
+  id: string
+  name: string
 }
 
 const CATEGORIES = [
@@ -19,15 +26,14 @@ const CATEGORIES = [
   { slug: 'poly-label', label: 'Poly Label' },
 ]
 
-const categoryLabel = (slug: string | null) =>
-  CATEGORIES.find(c => c.slug === slug)?.label ?? slug ?? '—'
-
 function EditModal({
   row,
+  suppliers,
   onClose,
   onSaved,
 }: {
   row: Partial<BatchReference> | null
+  suppliers: Supplier[]
   onClose: () => void
   onSaved: () => void
 }) {
@@ -35,6 +41,7 @@ function EditModal({
   const [productCode, setProductCode] = useState(row?.product_code ?? '')
   const [productName, setProductName] = useState(row?.product_name ?? '')
   const [category, setCategory] = useState(row?.category ?? '')
+  const [supplierId, setSupplierId] = useState(row?.supplier_id ?? '')
   const [refsText, setRefsText] = useState((row?.batch_references ?? []).join('\n'))
   const [saving, setSaving] = useState(false)
 
@@ -43,13 +50,21 @@ function EditModal({
       toast.error('Product code and name are required')
       return
     }
+    if (!supplierId) {
+      toast.error('Please select a supplier')
+      return
+    }
     const refs = refsText.split('\n').map(s => s.trim()).filter(Boolean)
+    const selectedSupplier = suppliers.find(s => s.id === supplierId)
+
     setSaving(true)
     try {
       const payload = {
         product_code: productCode.trim(),
         product_name: productName.trim(),
         category: category || null,
+        supplier_id: supplierId,
+        supplier_name: selectedSupplier?.name ?? null,
         batch_references: refs,
       }
       if (isNew) {
@@ -101,19 +116,37 @@ function EditModal({
             </div>
           </div>
 
-          <div>
-            <label className="block text-xs font-medium mb-1" style={{ color: '#4a7a9a' }}>Category</label>
-            <select
-              value={category}
-              onChange={e => setCategory(e.target.value)}
-              className="w-full rounded-lg px-3 py-2 text-sm text-white outline-none"
-              style={{ backgroundColor: '#0a1520', border: '1px solid #1e3a5a' }}
-            >
-              <option value="">— None —</option>
-              {CATEGORIES.map(c => (
-                <option key={c.slug} value={c.slug}>{c.label}</option>
-              ))}
-            </select>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium mb-1" style={{ color: '#4a7a9a' }}>Category</label>
+              <select
+                value={category}
+                onChange={e => setCategory(e.target.value)}
+                className="w-full rounded-lg px-3 py-2 text-sm text-white outline-none"
+                style={{ backgroundColor: '#0a1520', border: '1px solid #1e3a5a' }}
+              >
+                <option value="">— None —</option>
+                {CATEGORIES.map(c => (
+                  <option key={c.slug} value={c.slug}>{c.label}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium mb-1" style={{ color: '#4a7a9a' }}>
+                Supplier <span className="text-red-400">*</span>
+              </label>
+              <select
+                value={supplierId}
+                onChange={e => setSupplierId(e.target.value)}
+                className="w-full rounded-lg px-3 py-2 text-sm text-white outline-none"
+                style={{ backgroundColor: '#0a1520', border: `1px solid ${!supplierId ? '#5a2a2a' : '#1e3a5a'}` }}
+              >
+                <option value="">— Select supplier —</option>
+                {suppliers.map(s => (
+                  <option key={s.id} value={s.id}>{s.name}</option>
+                ))}
+              </select>
+            </div>
           </div>
 
           <div>
@@ -164,16 +197,69 @@ function GroupedTable({
   onDelete: (r: BatchReference) => void
 }) {
   const [expanded, setExpanded] = useState<Record<string, boolean>>({})
-
   const toggle = (slug: string) => setExpanded(p => ({ ...p, [slug]: !p[slug] }))
+
+  const renderRows = (catRows: BatchReference[]) => (
+    <table className="w-full text-sm">
+      <thead>
+        <tr style={{ borderBottom: '1px solid #1e3a5a' }}>
+          <th className="text-left px-4 py-2 text-xs font-medium" style={{ color: '#3a6a8a' }}>Code</th>
+          <th className="text-left px-4 py-2 text-xs font-medium" style={{ color: '#3a6a8a' }}>Product Name</th>
+          <th className="text-left px-4 py-2 text-xs font-medium" style={{ color: '#3a6a8a' }}>Supplier</th>
+          <th className="text-left px-4 py-2 text-xs font-medium" style={{ color: '#3a6a8a' }}>Batch References</th>
+          <th className="px-4 py-2 w-20" />
+        </tr>
+      </thead>
+      <tbody>
+        {catRows.length === 0 ? (
+          <tr>
+            <td colSpan={5} className="px-4 py-4 text-xs text-center" style={{ color: '#2a4a6a' }}>No entries</td>
+          </tr>
+        ) : catRows.map(row => (
+          <tr key={row.id} style={{ borderTop: '1px solid #0f2035' }}>
+            <td className="px-4 py-2.5 font-mono text-xs" style={{ color: '#6ab0d4' }}>{row.product_code}</td>
+            <td className="px-4 py-2.5 text-white">{row.product_name}</td>
+            <td className="px-4 py-2.5 text-xs" style={{ color: '#4a8aaa' }}>
+              {row.supplier_name ?? <span style={{ color: '#2a4a6a' }}>—</span>}
+            </td>
+            <td className="px-4 py-2.5">
+              <div className="flex flex-wrap gap-1">
+                {row.batch_references.slice(0, 4).map(ref => (
+                  <span key={ref} className="px-1.5 py-0.5 rounded text-xs font-mono" style={{ backgroundColor: '#0a1a2a', color: '#4a9fd4' }}>
+                    {ref}
+                  </span>
+                ))}
+                {row.batch_references.length > 4 && (
+                  <span className="px-1.5 py-0.5 rounded text-xs" style={{ color: '#2a5a7a' }}>
+                    +{row.batch_references.length - 4} more
+                  </span>
+                )}
+                {row.batch_references.length === 0 && (
+                  <span style={{ color: '#2a4a6a', fontSize: '0.75rem' }}>No references yet</span>
+                )}
+              </div>
+            </td>
+            <td className="px-4 py-2.5">
+              <div className="flex items-center justify-end gap-1">
+                <button onClick={() => onEdit(row)} className="p-1.5 rounded-lg hover:bg-white/5" style={{ color: '#4a7aaa' }}>
+                  <Pencil className="h-3.5 w-3.5" />
+                </button>
+                <button onClick={() => onDelete(row)} className="p-1.5 rounded-lg hover:bg-red-500/10" style={{ color: '#7a3a3a' }}>
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  )
 
   return (
     <div className="space-y-3">
       {CATEGORIES.map(cat => {
         const catRows = rows.filter(r => r.category === cat.slug)
-        const uncategorised = rows.filter(r => !r.category)
         const isOpen = expanded[cat.slug] ?? true
-
         return (
           <div key={cat.slug} className="rounded-xl overflow-hidden" style={{ border: '1px solid #1e3a5a' }}>
             <button
@@ -189,65 +275,7 @@ function GroupedTable({
                 {catRows.length}
               </span>
             </button>
-
-            {isOpen && (
-              <table className="w-full text-sm">
-                <thead>
-                  <tr style={{ borderBottom: '1px solid #1e3a5a' }}>
-                    <th className="text-left px-4 py-2 text-xs font-medium" style={{ color: '#3a6a8a' }}>Code</th>
-                    <th className="text-left px-4 py-2 text-xs font-medium" style={{ color: '#3a6a8a' }}>Product Name</th>
-                    <th className="text-left px-4 py-2 text-xs font-medium" style={{ color: '#3a6a8a' }}>Batch References</th>
-                    <th className="px-4 py-2 w-20" />
-                  </tr>
-                </thead>
-                <tbody>
-                  {catRows.length === 0 ? (
-                    <tr>
-                      <td colSpan={4} className="px-4 py-4 text-xs text-center" style={{ color: '#2a4a6a' }}>
-                        No entries
-                      </td>
-                    </tr>
-                  ) : catRows.map(row => (
-                    <tr key={row.id} style={{ borderTop: '1px solid #0f2035' }}>
-                      <td className="px-4 py-2.5 font-mono text-xs" style={{ color: '#6ab0d4' }}>{row.product_code}</td>
-                      <td className="px-4 py-2.5 text-white">{row.product_name}</td>
-                      <td className="px-4 py-2.5">
-                        <div className="flex flex-wrap gap-1">
-                          {row.batch_references.slice(0, 5).map(ref => (
-                            <span key={ref} className="px-1.5 py-0.5 rounded text-xs font-mono" style={{ backgroundColor: '#0a1a2a', color: '#4a9fd4' }}>
-                              {ref}
-                            </span>
-                          ))}
-                          {row.batch_references.length > 5 && (
-                            <span className="px-1.5 py-0.5 rounded text-xs" style={{ color: '#2a5a7a' }}>
-                              +{row.batch_references.length - 5} more
-                            </span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-4 py-2.5">
-                        <div className="flex items-center justify-end gap-1">
-                          <button
-                            onClick={() => onEdit(row)}
-                            className="p-1.5 rounded-lg transition-all hover:bg-white/5"
-                            style={{ color: '#4a7aaa' }}
-                          >
-                            <Pencil className="h-3.5 w-3.5" />
-                          </button>
-                          <button
-                            onClick={() => onDelete(row)}
-                            className="p-1.5 rounded-lg transition-all hover:bg-red-500/10"
-                            style={{ color: '#7a3a3a' }}
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
+            {isOpen && renderRows(catRows)}
           </div>
         )
       })}
@@ -272,50 +300,7 @@ function GroupedTable({
                 {uncategorised.length}
               </span>
             </button>
-            {isOpen && (
-              <table className="w-full text-sm">
-                <thead>
-                  <tr style={{ borderBottom: '1px solid #1e3a5a' }}>
-                    <th className="text-left px-4 py-2 text-xs font-medium" style={{ color: '#3a6a8a' }}>Code</th>
-                    <th className="text-left px-4 py-2 text-xs font-medium" style={{ color: '#3a6a8a' }}>Product Name</th>
-                    <th className="text-left px-4 py-2 text-xs font-medium" style={{ color: '#3a6a8a' }}>Batch References</th>
-                    <th className="px-4 py-2 w-20" />
-                  </tr>
-                </thead>
-                <tbody>
-                  {uncategorised.map(row => (
-                    <tr key={row.id} style={{ borderTop: '1px solid #0f2035' }}>
-                      <td className="px-4 py-2.5 font-mono text-xs" style={{ color: '#6ab0d4' }}>{row.product_code}</td>
-                      <td className="px-4 py-2.5 text-white">{row.product_name}</td>
-                      <td className="px-4 py-2.5">
-                        <div className="flex flex-wrap gap-1">
-                          {row.batch_references.slice(0, 5).map(ref => (
-                            <span key={ref} className="px-1.5 py-0.5 rounded text-xs font-mono" style={{ backgroundColor: '#0a1a2a', color: '#4a9fd4' }}>
-                              {ref}
-                            </span>
-                          ))}
-                          {row.batch_references.length > 5 && (
-                            <span className="px-1.5 py-0.5 rounded text-xs" style={{ color: '#2a5a7a' }}>
-                              +{row.batch_references.length - 5} more
-                            </span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-4 py-2.5">
-                        <div className="flex items-center justify-end gap-1">
-                          <button onClick={() => onEdit(row)} className="p-1.5 rounded-lg hover:bg-white/5" style={{ color: '#4a7aaa' }}>
-                            <Pencil className="h-3.5 w-3.5" />
-                          </button>
-                          <button onClick={() => onDelete(row)} className="p-1.5 rounded-lg hover:bg-red-500/10" style={{ color: '#7a3a3a' }}>
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
+            {isOpen && renderRows(uncategorised)}
           </div>
         )
       })()}
@@ -325,28 +310,30 @@ function GroupedTable({
 
 export function BellAdminPage() {
   const [rows, setRows] = useState<BatchReference[]>([])
+  const [suppliers, setSuppliers] = useState<Supplier[]>([])
   const [loading, setLoading] = useState(true)
   const [editRow, setEditRow] = useState<Partial<BatchReference> | null>(null)
   const [showModal, setShowModal] = useState(false)
 
-  const fetchRows = async () => {
+  const fetchAll = async () => {
     setLoading(true)
-    const { data } = await supabase
-      .from('batch_references')
-      .select('*')
-      .order('product_code') as any
-    setRows(data ?? [])
+    const [{ data: refs }, { data: sups }] = await Promise.all([
+      supabase.from('batch_references').select('*').order('product_code') as any,
+      supabase.from('suppliers').select('id, name').order('name') as any,
+    ])
+    setRows(refs ?? [])
+    setSuppliers(sups ?? [])
     setLoading(false)
   }
 
-  useEffect(() => { fetchRows() }, [])
+  useEffect(() => { fetchAll() }, [])
 
   const handleDelete = async (row: BatchReference) => {
-    if (!confirm(`Delete "${row.product_name}"?`)) return
+    if (!confirm(`Delete "${row.product_name}" (${row.supplier_name ?? 'no supplier'})?`)) return
     const { error } = await supabase.from('batch_references').delete().eq('id', row.id)
     if (error) { toast.error(error.message); return }
     toast.success('Deleted')
-    fetchRows()
+    fetchAll()
   }
 
   return (
@@ -354,7 +341,7 @@ export function BellAdminPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Batch References</h1>
-          <p className="text-sm mt-0.5" style={{ color: '#3a6a8a' }}>Manage valid batch reference codes per product</p>
+          <p className="text-sm mt-0.5" style={{ color: '#3a6a8a' }}>Manage valid batch reference codes per product and supplier</p>
         </div>
         <button
           onClick={() => { setEditRow({}); setShowModal(true) }}
@@ -381,8 +368,9 @@ export function BellAdminPage() {
       {showModal && (
         <EditModal
           row={editRow}
+          suppliers={suppliers}
           onClose={() => setShowModal(false)}
-          onSaved={fetchRows}
+          onSaved={fetchAll}
         />
       )}
     </div>
