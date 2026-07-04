@@ -34,6 +34,11 @@ function parseMask(mask: string): { batchLen: number; ctnLen: number; totalLen: 
   return { batchLen, ctnLen, totalLen: batchLen + ctnLen }
 }
 
+// Known fixed-length categories — add more as confirmed
+const LENGTH_TO_CATEGORY: Record<number, string> = {
+  35: 'carton',
+}
+
 // Try to match a raw barcode against all known format masks and batch references
 // Returns the matched batch ref row, extracted batch ref string, and ctn number
 async function resolveBarcode(raw: string): Promise<{
@@ -41,17 +46,24 @@ async function resolveBarcode(raw: string): Promise<{
   extractedRef: string
   ctnNumber: string
 } | null> {
-  // Load all format masks and all batch references in parallel
+  // If barcode length maps to a known category, only load refs for that category
+  const categoryHint = LENGTH_TO_CATEGORY[raw.length] ?? null
+
+  const refsQuery = supabase.from('batch_references').select('*') as any
+  if (categoryHint) refsQuery.eq('category', categoryHint)
+
   const [{ data: formats }, { data: allRefs }] = await Promise.all([
     supabase.from('supplier_barcode_formats').select('supplier_id, supplier_name, format_mask, has_ctn, category') as any,
-    supabase.from('batch_references').select('*') as any,
+    refsQuery,
   ])
 
   const masks: FormatMask[] = formats ?? []
+  // If we have a category hint, also filter masks to that category
+  const filteredMasks = categoryHint ? masks.filter(m => m.category === categoryHint) : masks
   const refs: BatchRef[] = allRefs ?? []
 
   // Try each format mask
-  for (const fmt of masks) {
+  for (const fmt of filteredMasks) {
     const { batchLen, ctnLen, totalLen } = parseMask(fmt.format_mask)
 
     // Barcode must match the total length of this mask
@@ -71,7 +83,7 @@ async function resolveBarcode(raw: string): Promise<{
     }
   }
 
-  // Fallback: try exact match across all refs regardless of supplier/format
+  // Fallback: try exact match within the already-filtered refs
   for (const ref of refs) {
     if (ref.batch_references.includes(raw)) {
       return { batchRef: ref, extractedRef: raw, ctnNumber: '0' }
