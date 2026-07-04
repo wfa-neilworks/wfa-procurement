@@ -81,12 +81,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data, error } = await supabase.auth.signUp({ email, password })
     const userId = data.user?.id ?? data.session?.user?.id
     if (!error && userId) {
-      await supabase.from('user_profiles').insert({
+      // upsert so duplicate signups don't fail silently
+      await (supabase.from('user_profiles') as any).upsert({
         id: userId,
         full_name: fullName ?? null,
         role: 'user',
         permissions: [],
-      } as any)
+      }, { onConflict: 'id', ignoreDuplicates: false })
     }
     return { error }
   }
