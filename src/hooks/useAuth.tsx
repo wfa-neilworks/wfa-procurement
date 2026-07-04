@@ -52,7 +52,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [session, setSession] = useState<Session | null>(null)
   const [loading, setLoading] = useState(true)
-  const initialSessionHandled = useRef(false)
+  const resolvedRef = useRef(false)
+
+  const resolveAuth = async (s: Session | null, mounted: { current: boolean }) => {
+    if (resolvedRef.current) return
+    resolvedRef.current = true
+
+    setSession(s)
+    setUser(s?.user ?? null)
+
+    if (s?.user) {
+      const p = await fetchProfile(s.user.id)
+      if (mounted.current) setProfile(p)
+    }
+
+    if (mounted.current) setLoading(false)
+  }
 
   const refreshProfile = async () => {
     const { data: { session: s } } = await supabase.auth.getSession()
@@ -62,53 +77,45 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   useEffect(() => {
-    let mounted = true
+    const mounted = { current: true }
 
+    // Start onAuthStateChange listener — INITIAL_SESSION fires immediately with localStorage session
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        if (!mounted) return
+        if (!mounted.current) return
 
         if (event === 'INITIAL_SESSION') {
-          // This fires once on load with the persisted session (or null)
-          initialSessionHandled.current = true
-          setSession(session)
-          setUser(session?.user ?? null)
-
-          if (session?.user) {
-            const p = await fetchProfile(session.user.id)
-            if (mounted) setProfile(p)
-          }
-
-          if (mounted) setLoading(false)
+          await resolveAuth(session, mounted)
           return
         }
 
-        // Subsequent auth events (SIGNED_IN, SIGNED_OUT, TOKEN_REFRESHED, etc.)
+        // For subsequent events, always process (resolvedRef doesn't block these)
         setSession(session)
         setUser(session?.user ?? null)
 
         if (session?.user) {
           const p = await fetchProfile(session.user.id)
-          if (mounted) setProfile(p)
+          if (mounted.current) setProfile(p)
         } else {
           setProfile(null)
         }
 
-        if (mounted) setLoading(false)
+        if (mounted.current) setLoading(false)
       }
     )
 
-    // Safety timeout: if INITIAL_SESSION never fires within 5s, unblock the app
-    const timeout = setTimeout(() => {
-      if (mounted && !initialSessionHandled.current) {
-        setLoading(false)
+    // Fallback: if INITIAL_SESSION doesn't fire within 1.5s, call getSession() ourselves
+    const fallbackTimer = setTimeout(async () => {
+      if (!resolvedRef.current && mounted.current) {
+        const { data: { session } } = await supabase.auth.getSession()
+        await resolveAuth(session, mounted)
       }
-    }, 5000)
+    }, 1500)
 
     return () => {
-      mounted = false
+      mounted.current = false
       subscription.unsubscribe()
-      clearTimeout(timeout)
+      clearTimeout(fallbackTimer)
     }
   }, [])
 
