@@ -4,6 +4,7 @@ import { supabase } from '../../lib/supabase'
 import { toast } from 'sonner'
 import { ShieldCheck, User, ChevronDown, ChevronUp } from 'lucide-react'
 import { Button } from '../../components/ui/button'
+import { Input } from '../../components/ui/input'
 import { cn } from '../../lib/utils'
 
 const ALL_SECTIONS = [
@@ -31,6 +32,7 @@ interface UserProfile {
 export function AdminUsersPage() {
   const queryClient = useQueryClient()
   const [expandedUser, setExpandedUser] = useState<string | null>(null)
+  const [editingName, setEditingName] = useState<{ id: string; value: string } | null>(null)
 
   const { data: users = [], isLoading } = useQuery<UserProfile[]>({
     queryKey: ['admin-users'],
@@ -80,6 +82,20 @@ export function AdminUsersPage() {
     updateUser.mutate({ id: user.id, patch: { permissions: [] } })
   }
 
+  const saveName = (id: string) => {
+    if (!editingName || editingName.value.trim() === '') return
+    updateUser.mutate({ id, patch: { full_name: editingName.value.trim() } })
+    setEditingName(null)
+  }
+
+  const getInitials = (name: string | null) => {
+    if (!name) return null
+    const parts = name.trim().split(' ')
+    return parts.length >= 2
+      ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+      : parts[0][0].toUpperCase()
+  }
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64 text-muted-foreground">
@@ -102,24 +118,69 @@ export function AdminUsersPage() {
         {users.map((user) => {
           const isExpanded = expandedUser === user.id
           const isAdmin = user.role === 'admin'
+          const initials = getInitials(user.full_name)
+          const isEditingThis = editingName?.id === user.id
 
           return (
             <div key={user.id} className="border rounded-xl overflow-hidden bg-card shadow-sm">
               {/* User row */}
               <div className="flex items-center justify-between px-5 py-4">
                 <div className="flex items-center gap-3">
-                  <div className="h-9 w-9 rounded-full flex items-center justify-center text-white text-sm font-semibold"
-                    style={{ backgroundColor: isAdmin ? '#2F575D' : '#6D9197' }}>
-                    {user.full_name ? user.full_name[0].toUpperCase() : <User className="h-4 w-4" />}
+                  <div
+                    className="h-10 w-10 rounded-full flex items-center justify-center text-white text-sm font-semibold shrink-0"
+                    style={{ backgroundColor: isAdmin ? '#2F575D' : '#6D9197' }}
+                  >
+                    {initials ?? <User className="h-4 w-4" />}
                   </div>
                   <div>
-                    <p className="font-medium text-sm">{user.full_name ?? 'Unnamed User'}</p>
-                    <p className="text-xs text-muted-foreground">{user.id}</p>
+                    {isEditingThis ? (
+                      <div className="flex items-center gap-2">
+                        <Input
+                          className="h-7 text-sm w-48"
+                          value={editingName.value}
+                          onChange={(e) => setEditingName({ id: user.id, value: e.target.value })}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') saveName(user.id)
+                            if (e.key === 'Escape') setEditingName(null)
+                          }}
+                          autoFocus
+                        />
+                        <button
+                          onClick={() => saveName(user.id)}
+                          className="text-xs font-medium px-2 py-1 rounded"
+                          style={{ backgroundColor: '#2F575D', color: 'white' }}
+                        >
+                          Save
+                        </button>
+                        <button
+                          onClick={() => setEditingName(null)}
+                          className="text-xs text-muted-foreground hover:text-foreground"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium text-sm">
+                          {user.full_name ?? (
+                            <span className="text-muted-foreground italic">Unnamed User</span>
+                          )}
+                        </p>
+                        <button
+                          onClick={() => setEditingName({ id: user.id, value: user.full_name ?? '' })}
+                          className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2"
+                        >
+                          {user.full_name ? 'edit' : 'set name'}
+                        </button>
+                      </div>
+                    )}
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      ID: {user.id.slice(0, 8)}…
+                    </p>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-3">
-                  {/* Role badge / toggle */}
                   <button
                     onClick={() => toggleRole(user)}
                     className={cn(
@@ -133,14 +194,13 @@ export function AdminUsersPage() {
                     {isAdmin ? 'Admin' : 'User'}
                   </button>
 
-                  {/* Expand permissions */}
                   {!isAdmin && (
                     <button
                       onClick={() => setExpandedUser(isExpanded ? null : user.id)}
                       className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
                     >
                       {isExpanded ? (
-                        <><ChevronUp className="h-4 w-4" /> Hide permissions</>
+                        <><ChevronUp className="h-4 w-4" /> Hide</>
                       ) : (
                         <><ChevronDown className="h-4 w-4" /> Manage access</>
                       )}
