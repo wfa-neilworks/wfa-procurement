@@ -36,31 +36,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    let mounted = true
+
+    // Initial session load — this is the source of truth on page load
     supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (!mounted) return
       setSession(session)
       setUser(session?.user ?? null)
       if (session?.user) {
         const p = await fetchProfile(session.user.id)
-        setProfile(p)
+        if (mounted) setProfile(p)
       }
-      setLoading(false)
+      if (mounted) setLoading(false)
     })
 
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    // Only handle auth state *changes* (sign in / sign out events)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (!mounted) return
+      // Skip the initial INITIAL_SESSION event — already handled above
+      if (event === 'INITIAL_SESSION') return
       setSession(session)
       setUser(session?.user ?? null)
       if (session?.user) {
         const p = await fetchProfile(session.user.id)
-        setProfile(p)
+        if (mounted) setProfile(p)
       } else {
         setProfile(null)
       }
       setLoading(false)
     })
 
-    return () => subscription.unsubscribe()
+    return () => {
+      mounted = false
+      subscription.unsubscribe()
+    }
   }, [])
 
   const signIn = async (email: string, password: string) => {

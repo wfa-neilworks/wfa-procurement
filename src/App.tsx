@@ -33,11 +33,22 @@ const queryClient = new QueryClient({
   },
 })
 
+function LoadingScreen() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="text-center space-y-3">
+        <div className="h-8 w-8 rounded-full border-4 border-muted border-t-transparent animate-spin mx-auto"
+          style={{ borderTopColor: '#2F575D' }} />
+        <p className="text-sm text-muted-foreground">Loading...</p>
+      </div>
+    </div>
+  )
+}
+
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, profile, isAdmin, loading } = useAuth()
-  if (loading) return null
+  if (loading) return <LoadingScreen />
   if (!user) return <Navigate to="/login" replace />
-  // User has no permissions yet — send to pending screen
   if (!isAdmin && profile && (profile.permissions ?? []).length === 0) {
     return <Navigate to="/pending" replace />
   }
@@ -46,7 +57,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 function AdminRoute({ children }: { children: React.ReactNode }) {
   const { user, isAdmin, loading } = useAuth()
-  if (loading) return null
+  if (loading) return <LoadingScreen />
   if (!user) return <Navigate to="/login" replace />
   if (!isAdmin) return <Navigate to="/" replace />
   return <>{children}</>
