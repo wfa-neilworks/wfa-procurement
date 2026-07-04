@@ -58,6 +58,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        if (event === 'TOKEN_REFRESHED' && !session) {
+          // Refresh failed — clear everything and send to login
+          setUser(null)
+          setProfile(null)
+          setSession(null)
+          setLoading(false)
+          return
+        }
+
         setSession(session)
         setUser(session?.user ?? null)
 
@@ -72,7 +81,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     )
 
-    return () => subscription.unsubscribe()
+    // If onAuthStateChange never fires (e.g. token refresh hangs), unblock after 4s
+    const timeout = setTimeout(() => setLoading(false), 4000)
+
+    return () => {
+      subscription.unsubscribe()
+      clearTimeout(timeout)
+    }
   }, [])
 
   const signIn = async (email: string, password: string) => {
