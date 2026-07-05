@@ -45,7 +45,6 @@ function EditModal({
   const [category, setCategory] = useState(row?.category ?? '')
   const [supplierId, setSupplierId] = useState(row?.supplier_id ?? '')
   const [formatMask, setFormatMask] = useState(row?.format_mask ?? '')
-  const [hasCtn, setHasCtn] = useState(row?.has_ctn ?? false)
   const [refsText, setRefsText] = useState((row?.batch_references ?? []).join('\n'))
   const [saving, setSaving] = useState(false)
 
@@ -70,7 +69,7 @@ function EditModal({
         supplier_id: supplierId,
         supplier_name: selectedSupplier?.name ?? null,
         format_mask: formatMask.trim().toUpperCase() || null,
-        has_ctn: hasCtn,
+        has_ctn: formatMask.toUpperCase().includes('Y'),
         batch_references: refs,
       }
       if (isNew) {
