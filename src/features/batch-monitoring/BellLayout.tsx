@@ -27,34 +27,37 @@ function DropdownSection({ name, base, icon: Icon }: { name: string; base: strin
     <div>
       <button
         onClick={() => setOpen(o => !o)}
-        className={cn(
-          'flex items-center justify-between w-full px-3 py-2.5 rounded-lg text-sm font-medium transition-all',
-          isAnyActive ? 'text-white' : 'text-blue-300/70 hover:text-blue-100 hover:bg-white/5'
-        )}
-        style={isAnyActive ? { backgroundColor: '#122a42' } : {}}
+        className="flex items-center justify-between w-full px-3 py-2.5 rounded-lg transition-all hover:bg-white/5"
+        style={{ color: isAnyActive ? '#e2f0ff' : '#5a8ab0' }}
       >
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5">
           <Icon className="h-4 w-4 shrink-0" />
-          {name}
+          <span className="text-sm font-semibold tracking-wide">{name}</span>
         </div>
-        {open ? <ChevronDown className="h-3.5 w-3.5 opacity-60" /> : <ChevronRight className="h-3.5 w-3.5 opacity-60" />}
+        {open
+          ? <ChevronDown className="h-3.5 w-3.5 opacity-50" />
+          : <ChevronRight className="h-3.5 w-3.5 opacity-50" />}
       </button>
 
       {open && (
-        <div className="mt-1 ml-4 space-y-0.5 border-l pl-3" style={{ borderColor: '#1e3a5a' }}>
+        <div className="mt-0.5 ml-3 space-y-px border-l" style={{ borderColor: '#1e3a5a' }}>
           {categories.map(cat => (
             <NavLink
               key={cat.slug}
               to={`${base}/${cat.slug}`}
-              className={({ isActive }) =>
-                cn(
-                  'block px-2 py-1.5 rounded-md text-xs font-medium transition-all',
-                  isActive ? 'text-white' : 'text-blue-300/60 hover:text-blue-100 hover:bg-white/5'
-                )
-              }
-              style={({ isActive }) => isActive ? { backgroundColor: '#1a3a5c' } : {}}
+              className="block pl-3 pr-2 py-1.5 text-xs font-medium transition-all relative"
+              style={({ isActive }) => ({
+                color: isActive ? '#fff' : '#4a7a9a',
+                backgroundColor: isActive ? '#0f2035' : 'transparent',
+                borderLeft: isActive ? '2px solid #2a7abf' : '2px solid transparent',
+                marginLeft: -1,
+              })}
             >
-              {cat.name}
+              {({ isActive }) => (
+                <span className={isActive ? 'text-white' : 'hover:text-blue-200'}>
+                  {cat.name}
+                </span>
+              )}
             </NavLink>
           ))}
         </div>
@@ -69,31 +72,29 @@ export function BellLayout() {
   return (
     <div className="flex h-screen w-screen">
       {/* BELL Sidebar */}
-      <aside className="w-56 shrink-0 flex flex-col h-full" style={{ backgroundColor: '#0a0f1a', borderRight: '1px solid #1e2d4a' }}>
+      <aside className="w-56 shrink-0 flex flex-col h-full" style={{ backgroundColor: '#0a0f1a', borderRight: '1px solid #1a2d42' }}>
         {/* Logo */}
-        <div className="p-4 border-b" style={{ borderColor: '#1e2d4a' }}>
+        <div className="p-4 border-b" style={{ borderColor: '#1a2d42' }}>
           <img src="/BellV3.png" alt="BELL" style={{ width: '100%', height: 'auto', display: 'block' }} />
         </div>
 
         {/* Nav */}
-        <nav className="flex-1 px-2 py-4 space-y-1 overflow-y-auto">
-          {/* Batch Entry — top, no dropdown */}
+        <nav className="flex-1 px-2 py-3 space-y-0.5 overflow-y-auto">
+          {/* Batch Entry — primary action */}
           <NavLink
             to="/batch-monitoring/entry"
-            className={({ isActive }) =>
-              cn(
-                'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all',
-                isActive ? 'text-white' : 'text-blue-300/70 hover:text-blue-100 hover:bg-white/5'
-              )
+            className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-bold w-full transition-all"
+            style={({ isActive }) => isActive
+              ? { backgroundColor: '#1a4a7a', color: '#fff', boxShadow: '0 0 0 1px #2a6aaa' }
+              : { backgroundColor: '#0d1e30', color: '#5a9acf', border: '1px solid #1e3a5a' }
             }
-            style={({ isActive }) => isActive ? { backgroundColor: '#1a3a5c' } : {}}
           >
             <ScanLine className="h-4 w-4 shrink-0" />
             Batch Entry
           </NavLink>
 
-          <div className="pt-1 pb-0.5 px-3">
-            <div className="h-px" style={{ backgroundColor: '#1e2d4a' }} />
+          <div className="py-2 px-1">
+            <div className="h-px" style={{ backgroundColor: '#0f2030' }} />
           </div>
 
           {/* Dropdown sections */}
@@ -104,18 +105,16 @@ export function BellLayout() {
           {/* Admin */}
           {isAdmin && (
             <>
-              <div className="pt-1 pb-0.5 px-3">
-                <div className="h-px" style={{ backgroundColor: '#1e2d4a' }} />
+              <div className="py-2 px-1">
+                <div className="h-px" style={{ backgroundColor: '#0f2030' }} />
               </div>
               <NavLink
                 to="/batch-monitoring/admin"
-                className={({ isActive }) =>
-                  cn(
-                    'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all',
-                    isActive ? 'text-white' : 'text-blue-300/70 hover:text-blue-100 hover:bg-white/5'
-                  )
-                }
-                style={({ isActive }) => isActive ? { backgroundColor: '#1a3a5c' } : {}}
+                className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium transition-all hover:bg-white/5"
+                style={({ isActive }) => ({
+                  color: isActive ? '#e2f0ff' : '#4a7a9a',
+                  backgroundColor: isActive ? '#0f2035' : 'transparent',
+                })}
               >
                 <ShieldCheck className="h-4 w-4 shrink-0" />
                 Admin
@@ -124,7 +123,7 @@ export function BellLayout() {
           )}
         </nav>
 
-        <div className="p-3 text-xs text-center" style={{ color: '#2a4a6a' }}>
+        <div className="p-3 text-center" style={{ color: '#1e3a5a', fontSize: '10px', letterSpacing: '0.1em' }}>
           BELL v1.0
         </div>
       </aside>
