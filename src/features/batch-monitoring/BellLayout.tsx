@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { NavLink, Outlet, useLocation } from 'react-router-dom'
-import { CalendarDays, BarChart2, Search, ShieldCheck, ScanLine, ChevronDown, ChevronRight } from 'lucide-react'
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
+import { CalendarDays, BarChart2, Search, ShieldCheck, ScanLine, ChevronDown, ChevronRight, LogOut, User } from 'lucide-react'
 import { cn } from '../../lib/utils'
 import { useAuth } from '../../hooks/useAuth'
 
@@ -67,7 +67,13 @@ function DropdownSection({ name, base, icon: Icon }: { name: string; base: strin
 }
 
 export function BellLayout() {
-  const { isAdmin } = useAuth()
+  const { isAdmin, profile, signOut } = useAuth()
+  const navigate = useNavigate()
+
+  const handleSignOut = async () => {
+    await signOut()
+    navigate('/login')
+  }
 
   return (
     <div className="flex h-screen w-screen">
@@ -129,8 +135,25 @@ export function BellLayout() {
       </aside>
 
       {/* Content */}
-      <div className="flex-1 overflow-auto" style={{ backgroundColor: '#080d18' }}>
-        <Outlet />
+      <div className="flex-1 flex flex-col overflow-hidden" style={{ backgroundColor: '#080d18' }}>
+        {/* Top bar */}
+        <div className="flex items-center justify-end gap-3 px-6 py-3 shrink-0" style={{ borderBottom: '1px solid #1a2d42' }}>
+          <User className="h-4 w-4" style={{ color: '#4a7aaa' }} />
+          <span className="text-sm font-medium text-white">{profile?.full_name ?? 'User'}</span>
+          <div className="w-px h-4 mx-1" style={{ backgroundColor: '#1e3a5a' }} />
+          <button
+            onClick={handleSignOut}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all hover:bg-red-900/30"
+            style={{ color: '#f87171', border: '1px solid #3a1a1a' }}
+          >
+            <LogOut className="h-3.5 w-3.5" />
+            Logout
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-auto">
+          <Outlet />
+        </div>
       </div>
     </div>
   )
