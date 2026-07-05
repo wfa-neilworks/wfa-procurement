@@ -69,6 +69,7 @@ function DropdownSection({ name, base, icon: Icon }: { name: string; base: strin
 export function BellLayout() {
   const { isAdmin, profile, signOut } = useAuth()
   const navigate = useNavigate()
+  const [showRestricted, setShowRestricted] = useState(false)
 
   const handleSignOut = async () => {
     await signOut()
@@ -109,11 +110,11 @@ export function BellLayout() {
           ))}
 
           {/* Admin */}
-          {isAdmin && (
-            <>
-              <div className="py-2 px-1">
-                <div className="h-px" style={{ backgroundColor: '#0f2030' }} />
-              </div>
+          <>
+            <div className="py-2 px-1">
+              <div className="h-px" style={{ backgroundColor: '#0f2030' }} />
+            </div>
+            {isAdmin ? (
               <NavLink
                 to="/batch-monitoring/admin"
                 className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium transition-all hover:bg-white/5"
@@ -125,12 +126,21 @@ export function BellLayout() {
                 <ShieldCheck className="h-4 w-4 shrink-0" />
                 Admin
               </NavLink>
-            </>
-          )}
+            ) : (
+              <button
+                onClick={() => setShowRestricted(true)}
+                className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium transition-all hover:bg-white/5 w-full"
+                style={{ color: '#4a7a9a' }}
+              >
+                <ShieldCheck className="h-4 w-4 shrink-0" />
+                Admin
+              </button>
+            )}
+          </>
         </nav>
 
         <div className="p-3 text-center font-bold" style={{ color: '#ffffff', fontSize: '11px', letterSpacing: '0.1em' }}>
-          BellEV-1.0
+          BellEVersion-1.0
         </div>
       </aside>
 
@@ -155,6 +165,26 @@ export function BellLayout() {
           <Outlet />
         </div>
       </div>
+
+      {/* Restricted access modal */}
+      {showRestricted && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ backgroundColor: 'rgba(0,0,0,0.6)' }}>
+          <div className="rounded-2xl p-8 flex flex-col items-center gap-4 text-center max-w-sm w-full mx-4" style={{ backgroundColor: '#0d1625', border: '1px solid #1e3a5a' }}>
+            <ShieldCheck className="h-12 w-12" style={{ color: '#2a6aaa' }} />
+            <p className="text-white font-semibold text-lg">Restricted Access</p>
+            <p className="text-sm" style={{ color: '#4a7aaa' }}>
+              Sorry, this section is restricted.<br />Only Admin accounts. :P
+            </p>
+            <button
+              onClick={() => setShowRestricted(false)}
+              className="mt-2 px-6 py-2 rounded-lg text-sm font-bold text-white transition-all"
+              style={{ backgroundColor: '#1a4a7a', border: '1px solid #2a6aaa' }}
+            >
+              Okay
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
