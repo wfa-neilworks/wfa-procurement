@@ -120,21 +120,24 @@ export function BatchEntryPage() {
       const now = new Date()
       const scannedDate = now.toISOString().split('T')[0]
 
-      // Duplicate = same batch reference AND same CTN ever recorded (any date)
-      const { data: existing } = await supabase
-        .from('batch_logs')
-        .select('id, scanned_date')
-        .eq('batch_reference', extractedRef)
-        .eq('pallet_number', ctnNumber)
-        .limit(1) as any
+      // Only check duplicates when the barcode has a CTN — without one we can't
+      // distinguish cartons so the same batch ref is allowed multiple times
+      if (batchRef.has_ctn) {
+        const { data: existing } = await supabase
+          .from('batch_logs')
+          .select('id, scanned_date')
+          .eq('batch_reference', extractedRef)
+          .eq('pallet_number', ctnNumber)
+          .limit(1) as any
 
-      if (existing && existing.length > 0) {
-        setResult({
-          ok: false,
-          message: 'Duplicate — already recorded',
-          detail: `Batch ${extractedRef} · CTN ${ctnNumber} was already logged on ${existing[0].scanned_date}`,
-        })
-        return
+        if (existing && existing.length > 0) {
+          setResult({
+            ok: false,
+            message: 'Duplicate — already recorded',
+            detail: `Batch ${extractedRef} · CTN ${ctnNumber} was already logged on ${existing[0].scanned_date}`,
+          })
+          return
+        }
       }
 
       const { error } = await supabase.from('batch_logs').insert({
