@@ -123,8 +123,8 @@ export function BellLayout() {
           )}
         </nav>
 
-        <div className="p-3 text-center" style={{ color: '#1e3a5a', fontSize: '10px', letterSpacing: '0.1em' }}>
-          BELL v1.0
+        <div className="p-3 text-center font-bold" style={{ color: '#ffffff', fontSize: '11px', letterSpacing: '0.1em' }}>
+          BellEV-1.0
         </div>
       </aside>
 
