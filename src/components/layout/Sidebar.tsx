@@ -130,7 +130,7 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
             ) : (
               <>
                 <button
-                  onClick={() => setInventoryOpen(!inventoryOpen)}
+                  onClick={() => can(item.section) ? setInventoryOpen(!inventoryOpen) : setShowRestricted(true)}
                   className={cn(
                     'flex items-center w-full gap-3 px-3 py-2 text-sm font-medium text-white hover:opacity-100 opacity-80 transition-all rounded-lg',
                     isCollapsed ? 'justify-center' : 'justify-between'
@@ -148,7 +148,7 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
                       <ChevronRight className="h-4 w-4" />
                     ))}
                 </button>
-                {inventoryOpen && !isCollapsed && (
+                {inventoryOpen && !isCollapsed && can(item.section) && (
                   <div className="ml-4 mt-1 space-y-1">
                     {item.children?.map((child) => (
                       <NavLink
