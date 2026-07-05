@@ -50,8 +50,21 @@ function LoadingScreen() {
   )
 }
 
+const SECTION_ROUTES: Record<string, string> = {
+  'home': '/',
+  'inventory': '/inventory/cartons-and-lids',
+  'pallets': '/pallets',
+  'batch-monitoring': '/batch-monitoring/entry',
+  'sds': '/sds',
+  'suppliers': '/suppliers',
+  'order-forms': '/order-forms',
+  'purchase-orders': '/purchase-orders',
+  'reports': '/reports',
+  'settings': '/settings',
+}
+
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { user, profile, isAdmin, loading } = useAuth()
+  const { user, profile, isAdmin, loading, can } = useAuth()
 
   // loading is only false after BOTH session + profile are resolved
   if (loading) return <LoadingScreen />
@@ -60,6 +73,21 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   // No profile row OR no permissions and not admin → pending
   if (!isAdmin && (!profile || profile.permissions.length === 0)) {
     return <Navigate to="/pending" replace />
+  }
+
+  // If user lands on a route they can't access, redirect to their first allowed section
+  if (!isAdmin) {
+    const currentPath = window.location.pathname
+    const matchedSection = Object.entries(SECTION_ROUTES).find(([, route]) =>
+      currentPath === route || currentPath.startsWith(route === '/' ? '/_never_' : route)
+    )
+    if (matchedSection) {
+      const [section] = matchedSection
+      if (!can(section)) {
+        const firstAllowed = Object.entries(SECTION_ROUTES).find(([s]) => can(s))
+        if (firstAllowed) return <Navigate to={firstAllowed[1]} replace />
+      }
+    }
   }
 
   return <>{children}</>
