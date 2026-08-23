@@ -79,7 +79,7 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
         style={{ borderColor: 'rgba(255,255,255,0.1)' }}
       >
         {!isCollapsed && (
-          <img src="/APPLOGO.png" alt="WFA Procurement" style={{ height: 48, width: 'auto', display: 'block', filter: 'brightness(0) invert(1)' }} />
+          <img src="/APPLOGO.png" alt="WFA Procurement" style={{ width: '100%', height: 'auto', display: 'block', filter: 'brightness(0) invert(1)' }} />
         )}
         <button
           onClick={onToggle}
