@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
-import { LogIn, Eye, EyeOff } from 'lucide-react'
+import { Eye, EyeOff } from 'lucide-react'
 
 export function LoginPage() {
   const { signIn, user, profile, isAdmin, loading } = useAuth()
@@ -45,11 +45,9 @@ export function LoginPage() {
       </div>
 
       <div className="w-full max-w-md px-6 relative z-10">
-        {/* Logo + title */}
+        {/* Logo */}
         <div className="text-center mb-8">
           <img src="/APPLOGO.png" alt="WFA Procurement" className="mx-auto mb-5" style={{ height: 180, width: 'auto', display: 'block' }} />
-          <h1 className="text-3xl font-bold text-white tracking-tight">WFA Procurement</h1>
-          <p className="text-sm mt-1" style={{ color: '#c8e8ee' }}>Management System</p>
         </div>
 
         {/* Card */}
@@ -57,12 +55,7 @@ export function LoginPage() {
           className="rounded-2xl p-8 shadow-2xl"
           style={{ backgroundColor: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', backdropFilter: 'blur(12px)' }}
         >
-          <div className="flex items-center gap-2 mb-6">
-            <div className="p-2 rounded-lg" style={{ backgroundColor: 'rgba(47,87,93,0.5)' }}>
-              <LogIn className="h-4 w-4 text-white" />
-            </div>
-            <h2 className="text-xl font-semibold text-white">Sign In</h2>
-          </div>
+          <h2 className="text-xl font-semibold text-white text-center mb-6">Sign In</h2>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
@@ -90,7 +83,7 @@ export function LoginPage() {
                   onChange={e => setPassword(e.target.value)}
                   placeholder="••••••••"
                   required
-                  className="w-full rounded-xl px-4 py-2.5 pr-10 text-sm text-white outline-none transition-all placeholder:opacity-40"
+                  className="w-full rounded-xl px-4 py-2.5 pr-10 text-sm text-gray-900 outline-none transition-all placeholder:text-gray-400"
                   style={{ backgroundColor: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)' }}
                   onFocus={e => e.currentTarget.style.borderColor = '#2F575D'}
                   onBlur={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.15)'}
@@ -127,9 +120,9 @@ export function LoginPage() {
             </button>
           </form>
 
-          <p className="text-center text-xs mt-6" style={{ color: '#5a8a96' }}>
+          <p className="text-center text-xs mt-6 text-black">
             Don't have an account?{' '}
-            <Link to="/register" className="font-semibold hover:underline" style={{ color: '#7aadbb' }}>
+            <Link to="/register" className="font-semibold hover:underline text-black">
               Register
             </Link>
           </p>
