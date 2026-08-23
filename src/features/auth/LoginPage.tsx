@@ -1,9 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
-import { Button } from '../../components/ui/button'
-import { Input } from '../../components/ui/input'
-import { LogIn } from 'lucide-react'
+import { LogIn, Eye, EyeOff } from 'lucide-react'
 
 export function LoginPage() {
   const { signIn, user, profile, isAdmin, loading } = useAuth()
@@ -12,10 +10,10 @@ export function LoginPage() {
   const justRegistered = searchParams.get('registered') === '1'
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [signingIn, setSigningIn] = useState(false)
 
-  // Once auth + profile are loaded, route the user to the right place
   useEffect(() => {
     if (loading || !user || !profile) return
     if (isAdmin || profile.permissions.length > 0) {
@@ -31,77 +29,107 @@ export function LoginPage() {
     setSigningIn(true)
     const { error } = await signIn(email, password)
     setSigningIn(false)
-    if (error) {
-      setError(error.message)
-    }
-    // Navigation is handled by the useEffect above once profile loads
+    if (error) setError(error.message)
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <div className="w-full max-w-sm">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold" style={{ color: '#28363D' }}>WFA Procurement</h1>
-          <p className="text-muted-foreground mt-1 text-sm">Management System</p>
+    <div
+      className="min-h-screen flex items-center justify-center relative overflow-hidden"
+      style={{ background: 'linear-gradient(135deg, #1a2830 0%, #28363D 50%, #1f4a52 100%)' }}
+    >
+      {/* Animated background blobs */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-32 -left-32 w-96 h-96 rounded-full opacity-20 animate-pulse" style={{ background: 'radial-gradient(circle, #2F575D, transparent)', animationDuration: '4s' }} />
+        <div className="absolute -bottom-32 -right-32 w-96 h-96 rounded-full opacity-20 animate-pulse" style={{ background: 'radial-gradient(circle, #3a7a82, transparent)', animationDuration: '6s' }} />
+        <div className="absolute top-1/2 left-1/4 w-64 h-64 rounded-full opacity-10 animate-pulse" style={{ background: 'radial-gradient(circle, #2F575D, transparent)', animationDuration: '5s' }} />
+      </div>
+
+      <div className="w-full max-w-md px-6 relative z-10">
+        {/* Logo + title */}
+        <div className="text-center mb-8 animate-fade-in">
+          <img src="/APPLOGO.png" alt="WFA Procurement" className="mx-auto mb-4" style={{ height: 80, width: 'auto' }} />
+          <h1 className="text-3xl font-bold text-white tracking-tight">WFA Procurement</h1>
+          <p className="text-sm mt-1" style={{ color: '#7aadbb' }}>Management System</p>
         </div>
 
-        <div className="border rounded-xl p-8 shadow-sm bg-card">
+        {/* Card */}
+        <div
+          className="rounded-2xl p-8 shadow-2xl"
+          style={{ backgroundColor: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', backdropFilter: 'blur(12px)' }}
+        >
           <div className="flex items-center gap-2 mb-6">
-            <LogIn className="h-5 w-5" style={{ color: '#2F575D' }} />
-            <h2 className="text-xl font-semibold">Sign In</h2>
+            <div className="p-2 rounded-lg" style={{ backgroundColor: 'rgba(47,87,93,0.5)' }}>
+              <LogIn className="h-4 w-4 text-white" />
+            </div>
+            <h2 className="text-xl font-semibold text-white">Sign In</h2>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label htmlFor="email" className="block text-sm font-medium mb-1">Email</label>
-              <Input
-                id="email"
+              <label className="block text-xs font-medium mb-1.5" style={{ color: '#7aadbb' }}>Email</label>
+              <input
                 type="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={e => setEmail(e.target.value)}
                 placeholder="your@email.com"
                 required
                 autoFocus
+                className="w-full rounded-xl px-4 py-2.5 text-sm text-white outline-none transition-all placeholder:opacity-40"
+                style={{ backgroundColor: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)' }}
+                onFocus={e => e.currentTarget.style.borderColor = '#2F575D'}
+                onBlur={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.15)'}
               />
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium mb-1">Password</label>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                required
-              />
+              <label className="block text-xs font-medium mb-1.5" style={{ color: '#7aadbb' }}>Password</label>
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  required
+                  className="w-full rounded-xl px-4 py-2.5 pr-10 text-sm text-white outline-none transition-all placeholder:opacity-40"
+                  style={{ backgroundColor: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)' }}
+                  onFocus={e => e.currentTarget.style.borderColor = '#2F575D'}
+                  onBlur={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.15)'}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(v => !v)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 opacity-50 hover:opacity-100 transition-opacity"
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4 text-white" /> : <Eye className="h-4 w-4 text-white" />}
+                </button>
+              </div>
             </div>
 
             {justRegistered && (
-              <div className="text-sm bg-green-50 text-green-700 border border-green-200 px-3 py-2 rounded-md">
-                Account created! Sign in to continue. An admin will grant you access.
+              <div className="text-xs rounded-xl px-4 py-3" style={{ backgroundColor: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)', color: '#86efac' }}>
+                Account created! An admin will grant you access once you sign in.
               </div>
             )}
 
             {error && (
-              <div className="text-sm text-destructive bg-destructive/10 px-3 py-2 rounded-md">
+              <div className="text-xs rounded-xl px-4 py-3" style={{ backgroundColor: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', color: '#fca5a5' }}>
                 {error}
               </div>
             )}
 
-            <Button
+            <button
               type="submit"
-              className="w-full"
               disabled={signingIn || loading}
-              style={{ backgroundColor: '#28363D' }}
+              className="w-full py-2.5 rounded-xl text-sm font-bold text-white transition-all disabled:opacity-50 mt-2"
+              style={{ background: 'linear-gradient(135deg, #2F575D, #1f4a52)', boxShadow: '0 4px 15px rgba(47,87,93,0.4)' }}
             >
               {signingIn || (loading && user) ? 'Signing in...' : 'Sign In'}
-            </Button>
+            </button>
           </form>
 
-          <p className="text-center text-sm text-muted-foreground mt-6">
+          <p className="text-center text-xs mt-6" style={{ color: '#5a8a96' }}>
             Don't have an account?{' '}
-            <Link to="/register" className="font-medium hover:underline" style={{ color: '#2F575D' }}>
+            <Link to="/register" className="font-semibold hover:underline" style={{ color: '#7aadbb' }}>
               Register
             </Link>
           </p>
