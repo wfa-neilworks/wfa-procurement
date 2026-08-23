@@ -115,13 +115,13 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
                 <button
                   onClick={() => handleNavClick(item.to!, item.section)}
                   className={cn(
-                    'flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all opacity-80 hover:opacity-100 w-full',
+                    'flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all opacity-60 hover:opacity-80 w-full',
                     isCollapsed && 'justify-center'
                   )}
                   title={isCollapsed ? item.name : undefined}
                 >
                   {item.icon && <item.icon className="h-4 w-4 shrink-0" />}
-                  {!isCollapsed && item.name}
+                  {!isCollapsed && <span className="line-through">{item.name}</span>}
                 </button>
               )
             ) : (
@@ -136,7 +136,11 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
                 >
                   <div className={cn('flex items-center gap-3', isCollapsed && 'justify-center')}>
                     {item.icon && <item.icon className="h-4 w-4 shrink-0" />}
-                    {!isCollapsed && item.name}
+                    {!isCollapsed && (
+                      can(item.section)
+                        ? item.name
+                        : <span className="line-through opacity-60">{item.name}</span>
+                    )}
                   </div>
                   {!isCollapsed &&
                     (inventoryOpen ? (
