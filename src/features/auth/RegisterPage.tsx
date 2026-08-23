@@ -55,7 +55,9 @@ export function RegisterPage() {
       <div className="w-full max-w-md px-6 relative z-10">
         {/* Logo + title */}
         <div className="text-center mb-8">
-          <img src="/APPLOGO.png" alt="WFA Procurement" className="mx-auto mb-4" style={{ height: 80, width: 'auto' }} />
+          <div className="inline-block rounded-2xl p-3 mb-4" style={{ backgroundColor: 'rgba(255,255,255,0.95)' }}>
+            <img src="/APPLOGO.png" alt="WFA Procurement" style={{ height: 72, width: 'auto', display: 'block' }} />
+          </div>
           <h1 className="text-3xl font-bold text-white tracking-tight">WFA Procurement</h1>
           <p className="text-sm mt-1" style={{ color: '#7aadbb' }}>Management System</p>
         </div>
