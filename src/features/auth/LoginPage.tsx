@@ -47,7 +47,7 @@ export function LoginPage() {
       <div className="w-full max-w-md px-6 relative z-10">
         {/* Logo */}
         <div className="text-center mb-8">
-          <img src="/APPLOGO.png" alt="WFA Procurement" className="mx-auto mb-5" style={{ height: 180, width: 'auto', display: 'block' }} />
+          <img src="/APPLOGO.png" alt="WFA Procurement" className="mx-auto mb-5" style={{ height: 270, width: 'auto', display: 'block' }} />
         </div>
 
         {/* Card */}
@@ -55,7 +55,7 @@ export function LoginPage() {
           className="rounded-2xl p-8 shadow-2xl"
           style={{ backgroundColor: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', backdropFilter: 'blur(12px)' }}
         >
-          <h2 className="text-xl font-semibold text-white text-center mb-6">Sign In</h2>
+          <h2 className="text-3xl font-bold text-white text-center mb-6">Sign In</h2>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
