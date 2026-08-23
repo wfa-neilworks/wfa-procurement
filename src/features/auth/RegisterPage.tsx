@@ -44,22 +44,20 @@ export function RegisterPage() {
   return (
     <div
       className="min-h-screen flex items-center justify-center relative overflow-hidden py-8"
-      style={{ background: 'linear-gradient(135deg, #1a2830 0%, #28363D 50%, #1f4a52 100%)' }}
+      style={{ background: 'linear-gradient(135deg, #3d6b73 0%, #4a8090 50%, #2d5a62 100%)' }}
     >
       {/* Animated background blobs */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-32 -right-32 w-96 h-96 rounded-full opacity-20 animate-pulse" style={{ background: 'radial-gradient(circle, #2F575D, transparent)', animationDuration: '4s' }} />
-        <div className="absolute -bottom-32 -left-32 w-96 h-96 rounded-full opacity-20 animate-pulse" style={{ background: 'radial-gradient(circle, #3a7a82, transparent)', animationDuration: '6s' }} />
+        <div className="absolute -top-32 -right-32 w-96 h-96 rounded-full opacity-30 animate-pulse" style={{ background: 'radial-gradient(circle, #5a9ea8, transparent)', animationDuration: '4s' }} />
+        <div className="absolute -bottom-32 -left-32 w-96 h-96 rounded-full opacity-30 animate-pulse" style={{ background: 'radial-gradient(circle, #3a8a96, transparent)', animationDuration: '6s' }} />
       </div>
 
       <div className="w-full max-w-md px-6 relative z-10">
         {/* Logo + title */}
         <div className="text-center mb-8">
-          <div className="inline-block rounded-2xl p-3 mb-4" style={{ backgroundColor: 'rgba(255,255,255,0.95)' }}>
-            <img src="/APPLOGO.png" alt="WFA Procurement" style={{ height: 72, width: 'auto', display: 'block' }} />
-          </div>
+          <img src="/APPLOGO.png" alt="WFA Procurement" className="mx-auto mb-5" style={{ height: 120, width: 'auto', display: 'block' }} />
           <h1 className="text-3xl font-bold text-white tracking-tight">WFA Procurement</h1>
-          <p className="text-sm mt-1" style={{ color: '#7aadbb' }}>Management System</p>
+          <p className="text-sm mt-1" style={{ color: '#c8e8ee' }}>Management System</p>
         </div>
 
         {/* Card */}
