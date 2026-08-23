@@ -36,7 +36,7 @@ export function RegisterPage() {
     }
   }
 
-  const inputClass = "w-full rounded-xl px-4 py-2.5 text-sm text-white outline-none transition-all placeholder:opacity-40"
+  const inputClass = "w-full rounded-xl px-4 py-2.5 text-sm text-gray-900 outline-none transition-all placeholder:text-gray-400"
   const inputStyle = { backgroundColor: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)' }
   const onFocus = (e: React.FocusEvent<HTMLInputElement>) => e.currentTarget.style.borderColor = '#2F575D'
   const onBlur = (e: React.FocusEvent<HTMLInputElement>) => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.15)'
@@ -55,7 +55,7 @@ export function RegisterPage() {
       <div className="w-full max-w-md px-6 relative z-10">
         {/* Logo + title */}
         <div className="text-center mb-8">
-          <img src="/APPLOGO.png" alt="WFA Procurement" className="mx-auto mb-5" style={{ height: 120, width: 'auto', display: 'block' }} />
+          <img src="/APPLOGO.png" alt="WFA Procurement" className="mx-auto mb-5" style={{ height: 180, width: 'auto', display: 'block' }} />
           <h1 className="text-3xl font-bold text-white tracking-tight">WFA Procurement</h1>
           <p className="text-sm mt-1" style={{ color: '#c8e8ee' }}>Management System</p>
         </div>
@@ -75,13 +75,13 @@ export function RegisterPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-medium mb-1.5" style={{ color: '#7aadbb' }}>First Name</label>
+                <label className="block text-xs font-medium mb-1.5" style={{ color: '#111' }}>First Name</label>
                 <input type="text" value={firstName} onChange={e => setFirstName(e.target.value)}
                   placeholder="John" required autoFocus
                   className={inputClass} style={{ ...inputStyle }} onFocus={onFocus} onBlur={onBlur} />
               </div>
               <div>
-                <label className="block text-xs font-medium mb-1.5" style={{ color: '#7aadbb' }}>Last Name</label>
+                <label className="block text-xs font-medium mb-1.5" style={{ color: '#111' }}>Last Name</label>
                 <input type="text" value={lastName} onChange={e => setLastName(e.target.value)}
                   placeholder="Smith" required
                   className={inputClass} style={{ ...inputStyle }} onFocus={onFocus} onBlur={onBlur} />

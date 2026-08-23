@@ -47,7 +47,7 @@ export function LoginPage() {
       <div className="w-full max-w-md px-6 relative z-10">
         {/* Logo + title */}
         <div className="text-center mb-8">
-          <img src="/APPLOGO.png" alt="WFA Procurement" className="mx-auto mb-5" style={{ height: 120, width: 'auto', display: 'block' }} />
+          <img src="/APPLOGO.png" alt="WFA Procurement" className="mx-auto mb-5" style={{ height: 180, width: 'auto', display: 'block' }} />
           <h1 className="text-3xl font-bold text-white tracking-tight">WFA Procurement</h1>
           <p className="text-sm mt-1" style={{ color: '#c8e8ee' }}>Management System</p>
         </div>
@@ -66,7 +66,7 @@ export function LoginPage() {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: '#7aadbb' }}>Email</label>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: '#111' }}>Email</label>
               <input
                 type="email"
                 value={email}
@@ -74,7 +74,7 @@ export function LoginPage() {
                 placeholder="your@email.com"
                 required
                 autoFocus
-                className="w-full rounded-xl px-4 py-2.5 text-sm text-white outline-none transition-all placeholder:opacity-40"
+                className="w-full rounded-xl px-4 py-2.5 text-sm text-gray-900 outline-none transition-all placeholder:text-gray-400"
                 style={{ backgroundColor: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)' }}
                 onFocus={e => e.currentTarget.style.borderColor = '#2F575D'}
                 onBlur={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.15)'}
@@ -82,7 +82,7 @@ export function LoginPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: '#7aadbb' }}>Password</label>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: '#111' }}>Password</label>
               <div className="relative">
                 <input
                   type={showPassword ? 'text' : 'password'}
