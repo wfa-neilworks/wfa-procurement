@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
-import { UserPlus, Eye, EyeOff } from 'lucide-react'
+import { Eye, EyeOff } from 'lucide-react'
 
 export function RegisterPage() {
   const { signUp, signOut } = useAuth()
@@ -53,11 +53,9 @@ export function RegisterPage() {
       </div>
 
       <div className="w-full max-w-md px-6 relative z-10">
-        {/* Logo + title */}
+        {/* Logo */}
         <div className="text-center mb-8">
-          <img src="/APPLOGO.png" alt="WFA Procurement" className="mx-auto mb-5" style={{ height: 180, width: 'auto', display: 'block' }} />
-          <h1 className="text-3xl font-bold text-white tracking-tight">WFA Procurement</h1>
-          <p className="text-sm mt-1" style={{ color: '#c8e8ee' }}>Management System</p>
+          <img src="/APPLOGO.png" alt="WFA Procurement" className="mx-auto mb-5" style={{ height: 270, width: 'auto', display: 'block' }} />
         </div>
 
         {/* Card */}
@@ -65,12 +63,7 @@ export function RegisterPage() {
           className="rounded-2xl p-8 shadow-2xl"
           style={{ backgroundColor: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', backdropFilter: 'blur(12px)' }}
         >
-          <div className="flex items-center gap-2 mb-6">
-            <div className="p-2 rounded-lg" style={{ backgroundColor: 'rgba(47,87,93,0.5)' }}>
-              <UserPlus className="h-4 w-4 text-white" />
-            </div>
-            <h2 className="text-xl font-semibold text-white">Create Account</h2>
-          </div>
+          <h2 className="text-3xl font-bold text-white text-center mb-6">Create Account</h2>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
@@ -89,14 +82,14 @@ export function RegisterPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: '#7aadbb' }}>Email</label>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: '#111' }}>Email</label>
               <input type="email" value={email} onChange={e => setEmail(e.target.value)}
                 placeholder="your@email.com" required
                 className={inputClass} style={{ ...inputStyle }} onFocus={onFocus} onBlur={onBlur} />
             </div>
 
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: '#7aadbb' }}>Password</label>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: '#111' }}>Password</label>
               <div className="relative">
                 <input type={showPassword ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)}
                   placeholder="••••••••" required
@@ -109,7 +102,7 @@ export function RegisterPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: '#7aadbb' }}>Confirm Password</label>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: '#111' }}>Confirm Password</label>
               <div className="relative">
                 <input type={showConfirm ? 'text' : 'password'} value={confirm} onChange={e => setConfirm(e.target.value)}
                   placeholder="••••••••" required
@@ -137,9 +130,9 @@ export function RegisterPage() {
             </button>
           </form>
 
-          <p className="text-center text-xs mt-6" style={{ color: '#5a8a96' }}>
+          <p className="text-center text-xs mt-6 text-black">
             Already have an account?{' '}
-            <Link to="/login" className="font-semibold hover:underline" style={{ color: '#7aadbb' }}>
+            <Link to="/login" className="font-semibold hover:underline text-black">
               Sign In
             </Link>
           </p>
