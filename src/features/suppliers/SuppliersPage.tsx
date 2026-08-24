@@ -397,21 +397,23 @@ export function SuppliersPage() {
           6: { cellWidth: 28, halign: 'center' },
         },
         styles: { fontSize: 9, cellPadding: 3 },
-        didDrawPage: () => {
-          const pageH = doc.internal.pageSize.getHeight()
-          const pageW = doc.internal.pageSize.getWidth()
-          const totalPages = (doc as any).internal.getNumberOfPages()
-          const currentPage = (doc as any).internal.getCurrentPageInfo().pageNumber
-          const printed = new Date().toLocaleString('en-AU', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
-          doc.setFontSize(8)
-          doc.setTextColor(120)
-          doc.setFont('helvetica', 'normal')
-          doc.text(`Page ${currentPage} of ${totalPages}`, 14, pageH - 8)
-          doc.setFont('helvetica', 'italic')
-          doc.text(`Printed: ${printed}`, pageW - 14, pageH - 8, { align: 'right' })
-          doc.setTextColor(0)
-        },
       })
+
+      // Add footers after all pages are rendered
+      const totalPages = (doc as any).internal.getNumberOfPages()
+      const pageH = doc.internal.pageSize.getHeight()
+      const pageW = doc.internal.pageSize.getWidth()
+      const printed = new Date().toLocaleString('en-AU', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+      for (let i = 1; i <= totalPages; i++) {
+        doc.setPage(i)
+        doc.setFontSize(8)
+        doc.setTextColor(120)
+        doc.setFont('helvetica', 'normal')
+        doc.text(`Page ${i} of ${totalPages}`, 14, pageH - 8)
+        doc.setFont('helvetica', 'italic')
+        doc.text(`Printed: ${printed}`, pageW - 14, pageH - 8, { align: 'right' })
+        doc.setTextColor(0)
+      }
 
       doc.save('Approved_Suppliers.pdf')
     }
