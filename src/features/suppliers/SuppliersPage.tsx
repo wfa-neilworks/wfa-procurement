@@ -4,6 +4,7 @@ import { toast } from 'sonner'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import { supabase } from '../../lib/supabase'
+import { useAuth } from '../../hooks/useAuth'
 import { Button } from '../../components/ui/button'
 import { Input } from '../../components/ui/input'
 import { Card } from '../../components/ui/card'
@@ -31,6 +32,7 @@ type Certificate = Database['public']['Tables']['supplier_certificates']['Row']
 type CertificateInsert = Database['public']['Tables']['supplier_certificates']['Insert']
 
 export function SuppliersPage() {
+  const { profile } = useAuth()
   const [suppliers, setSuppliers] = useState<Supplier[]>([])
   const [filteredSuppliers, setFilteredSuppliers] = useState<Supplier[]>([])
   const [loading, setLoading] = useState(true)
@@ -404,12 +406,14 @@ export function SuppliersPage() {
       const pageH = doc.internal.pageSize.getHeight()
       const pageW = doc.internal.pageSize.getWidth()
       const printed = new Date().toLocaleString('en-AU', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+      const printedBy = profile?.full_name ?? 'Unknown'
       for (let i = 1; i <= totalPages; i++) {
         doc.setPage(i)
         doc.setFontSize(8)
         doc.setTextColor(120)
         doc.setFont('helvetica', 'normal')
         doc.text(`Page ${i} of ${totalPages}`, 14, pageH - 8)
+        doc.text(`Printed By: ${printedBy}`, pageW / 2, pageH - 8, { align: 'center' })
         doc.setFont('helvetica', 'italic')
         doc.text(`Printed: ${printed}`, pageW - 14, pageH - 8, { align: 'right' })
         doc.setTextColor(0)
