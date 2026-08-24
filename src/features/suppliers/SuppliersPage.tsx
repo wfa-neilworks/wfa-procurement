@@ -42,6 +42,7 @@ export function SuppliersPage() {
     contact: '',
     email: '',
     phone: '',
+    vendor_type: 'Supplier' as 'Supplier' | 'Service Provider',
   })
 
   // View supplier details dialog
@@ -122,6 +123,7 @@ export function SuppliersPage() {
         contact: supplier.contact || '',
         email: supplier.email || '',
         phone: supplier.phone || '',
+        vendor_type: (supplier as any).vendor_type || 'Supplier',
       })
     } else {
       setEditingSupplier(null)
@@ -130,6 +132,7 @@ export function SuppliersPage() {
         contact: '',
         email: '',
         phone: '',
+        vendor_type: 'Supplier',
       })
     }
     setIsDialogOpen(true)
@@ -155,7 +158,8 @@ export function SuppliersPage() {
           contact: formData.contact || null,
           email: formData.email || null,
           phone: formData.phone || null,
-        }
+          vendor_type: formData.vendor_type,
+        } as any
 
         const { error } = await supabase
           .from('suppliers')
@@ -170,7 +174,8 @@ export function SuppliersPage() {
           contact: formData.contact || null,
           email: formData.email || null,
           phone: formData.phone || null,
-        }
+          vendor_type: formData.vendor_type,
+        } as any
 
         const { error } = await supabase.from('suppliers').insert(insertData)
 
@@ -371,6 +376,7 @@ export function SuppliersPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Supplier Name</TableHead>
+                <TableHead>Vendor Type</TableHead>
                 <TableHead>Contact Person</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Phone</TableHead>
@@ -394,6 +400,11 @@ export function SuppliersPage() {
                 filteredSuppliers.map((supplier) => (
                   <TableRow key={supplier.id}>
                     <TableCell className="font-medium">{supplier.name}</TableCell>
+                    <TableCell>
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${(supplier as any).vendor_type === 'Service Provider' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}`}>
+                        {(supplier as any).vendor_type || 'Supplier'}
+                      </span>
+                    </TableCell>
                     <TableCell>{supplier.contact || '-'}</TableCell>
                     <TableCell>
                       {supplier.email ? (
@@ -464,6 +475,17 @@ export function SuppliersPage() {
               />
             </div>
             <div>
+              <label className="text-sm font-medium">Vendor Type *</label>
+              <select
+                value={formData.vendor_type}
+                onChange={(e) => setFormData({ ...formData, vendor_type: e.target.value as any })}
+                className="w-full mt-1 rounded-md border px-3 py-2 text-sm bg-background"
+              >
+                <option value="Supplier">Supplier</option>
+                <option value="Service Provider">Service Provider</option>
+              </select>
+            </div>
+            <div>
               <label className="text-sm font-medium">Contact Person</label>
               <Input
                 value={formData.contact}
@@ -514,6 +536,12 @@ export function SuppliersPage() {
                 <div>
                   <p className="text-sm text-gray-600">Supplier Name</p>
                   <p className="font-semibold text-lg">{viewingSupplier.name}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Vendor Type</p>
+                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${(viewingSupplier as any).vendor_type === 'Service Provider' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}`}>
+                    {(viewingSupplier as any).vendor_type || 'Supplier'}
+                  </span>
                 </div>
                 <div>
                   <p className="text-sm text-gray-600">Contact Person</p>
