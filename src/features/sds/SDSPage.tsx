@@ -319,12 +319,25 @@ export function SDSPage() {
           3: { cellWidth: 20, halign: 'center' },
         },
         styles: { fontSize: 10, cellPadding: 4 },
+        didDrawPage: () => {
+          const pageH = doc.internal.pageSize.getHeight()
+          const pageW = doc.internal.pageSize.getWidth()
+          const totalPages = (doc as any).internal.getNumberOfPages()
+          const currentPage = (doc as any).internal.getCurrentPageInfo().pageNumber
+          const printed = new Date().toLocaleString('en-AU', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+          doc.setFontSize(8)
+          doc.setTextColor(120)
+          doc.setFont('helvetica', 'normal')
+          doc.text(`Page ${currentPage} of ${totalPages}`, 14, pageH - 8)
+          doc.setFont('helvetica', 'italic')
+          doc.text(`Printed: ${printed}`, pageW - 14, pageH - 8, { align: 'right' })
+          doc.setTextColor(0)
+        },
       })
 
       doc.save('Chemical_Register.pdf')
     }
     img.onerror = () => {
-      // Fallback without logo
       let y = 14
       doc.setFontSize(26)
       doc.setFont('helvetica', 'bold')
@@ -344,6 +357,20 @@ export function SDSPage() {
         alternateRowStyles: { fillColor: [245, 248, 249] },
         columnStyles: { 0: { cellWidth: 12, halign: 'center' }, 3: { cellWidth: 20, halign: 'center' } },
         styles: { fontSize: 10, cellPadding: 4 },
+        didDrawPage: () => {
+          const pageH = doc.internal.pageSize.getHeight()
+          const pageW = doc.internal.pageSize.getWidth()
+          const totalPages = (doc as any).internal.getNumberOfPages()
+          const currentPage = (doc as any).internal.getCurrentPageInfo().pageNumber
+          const printed = new Date().toLocaleString('en-AU', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+          doc.setFontSize(8)
+          doc.setTextColor(120)
+          doc.setFont('helvetica', 'normal')
+          doc.text(`Page ${currentPage} of ${totalPages}`, 14, pageH - 8)
+          doc.setFont('helvetica', 'italic')
+          doc.text(`Printed: ${printed}`, pageW - 14, pageH - 8, { align: 'right' })
+          doc.setTextColor(0)
+        },
       })
       doc.save('Chemical_Register.pdf')
     }
