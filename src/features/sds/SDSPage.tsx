@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
-import { Plus, Pencil, Trash2, Search, FileText, ExternalLink, Upload, X, Eye, Download } from 'lucide-react'
+import { Plus, Pencil, Trash2, Search, FileText, ExternalLink, Upload, X, Eye, FileDown } from 'lucide-react'
 import { toast } from 'sonner'
+import jsPDF from 'jspdf'
+import autoTable from 'jspdf-autotable'
 import { supabase } from '../../lib/supabase'
 import { Button } from '../../components/ui/button'
 import { Input } from '../../components/ui/input'
@@ -269,6 +271,84 @@ export function SDSPage() {
     })
   }
 
+  const handleExportPDF = () => {
+    const doc = new jsPDF()
+    const pageWidth = doc.internal.pageSize.getWidth()
+
+    // Load logo and build PDF
+    const img = new Image()
+    img.src = '/APPLOGO.png'
+    img.onload = () => {
+      // Logo — centered at top
+      const logoW = 60
+      const logoH = (img.height / img.width) * logoW
+      doc.addImage(img, 'PNG', (pageWidth - logoW) / 2, 12, logoW, logoH)
+
+      let y = 14 + logoH
+
+      // Title
+      doc.setFontSize(26)
+      doc.setFont('helvetica', 'bold')
+      doc.text('Chemical Register', pageWidth / 2, y + 10, { align: 'center' })
+
+      // Company name
+      doc.setFontSize(11)
+      doc.setFont('helvetica', 'normal')
+      doc.text('Woodward Foods Australia', pageWidth / 2, y + 18, { align: 'center' })
+
+      // Address
+      doc.setFontSize(10)
+      doc.setTextColor(100)
+      doc.text('334C River Rd. Swan Hill VIC 3585', pageWidth / 2, y + 24, { align: 'center' })
+      doc.setTextColor(0)
+
+      // Table
+      autoTable(doc, {
+        startY: y + 32,
+        head: [['#', 'Chemical Name', 'Location', 'SDS']],
+        body: filteredChemicals.map((c, i) => [
+          i + 1,
+          c.name,
+          c.location,
+          c.pdf_url ? 'Yes' : 'No',
+        ]),
+        headStyles: { fillColor: [40, 54, 61], textColor: 255, fontStyle: 'bold' },
+        alternateRowStyles: { fillColor: [245, 248, 249] },
+        columnStyles: {
+          0: { cellWidth: 12, halign: 'center' },
+          3: { cellWidth: 20, halign: 'center' },
+        },
+        styles: { fontSize: 10, cellPadding: 4 },
+      })
+
+      doc.save('Chemical_Register.pdf')
+    }
+    img.onerror = () => {
+      // Fallback without logo
+      let y = 14
+      doc.setFontSize(26)
+      doc.setFont('helvetica', 'bold')
+      doc.text('Chemical Register', pageWidth / 2, y + 10, { align: 'center' })
+      doc.setFontSize(11)
+      doc.setFont('helvetica', 'normal')
+      doc.text('Woodward Foods Australia', pageWidth / 2, y + 18, { align: 'center' })
+      doc.setFontSize(10)
+      doc.setTextColor(100)
+      doc.text('334C River Rd. Swan Hill VIC 3585', pageWidth / 2, y + 24, { align: 'center' })
+      doc.setTextColor(0)
+      autoTable(doc, {
+        startY: y + 32,
+        head: [['#', 'Chemical Name', 'Location', 'SDS']],
+        body: filteredChemicals.map((c, i) => [i + 1, c.name, c.location, c.pdf_url ? 'Yes' : 'No']),
+        headStyles: { fillColor: [40, 54, 61], textColor: 255, fontStyle: 'bold' },
+        alternateRowStyles: { fillColor: [245, 248, 249] },
+        columnStyles: { 0: { cellWidth: 12, halign: 'center' }, 3: { cellWidth: 20, halign: 'center' } },
+        styles: { fontSize: 10, cellPadding: 4 },
+      })
+      doc.save('Chemical_Register.pdf')
+    }
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -277,10 +357,16 @@ export function SDSPage() {
           <h1 className="text-3xl font-bold tracking-tight">SDS Chemicals</h1>
           <p className="text-muted-foreground">Safety Data Sheet chemical registry</p>
         </div>
-        <Button onClick={() => handleOpenDialog()}>
-          <Plus className="mr-2 h-4 w-4" />
-          Add Chemical
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={handleExportPDF}>
+            <FileDown className="mr-2 h-4 w-4" />
+            Export PDF
+          </Button>
+          <Button onClick={() => handleOpenDialog()}>
+            <Plus className="mr-2 h-4 w-4" />
+            Add Chemical
+          </Button>
+        </div>
       </div>
 
       {/* Search */}
