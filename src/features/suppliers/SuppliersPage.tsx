@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
-import { Plus, Pencil, Trash2, Search, Mail, Phone, Eye, Calendar, AlertCircle } from 'lucide-react'
+import { Plus, Pencil, Trash2, Search, Mail, Phone, Eye, Calendar, AlertCircle, FileDown } from 'lucide-react'
 import { toast } from 'sonner'
+import jsPDF from 'jspdf'
+import autoTable from 'jspdf-autotable'
 import { supabase } from '../../lib/supabase'
 import { Button } from '../../components/ui/button'
 import { Input } from '../../components/ui/input'
@@ -339,6 +341,71 @@ export function SuppliersPage() {
     })
   }
 
+  const handleExportPDF = async () => {
+    // Fetch certificate counts for all suppliers
+    const { data: certData } = await supabase
+      .from('supplier_certificates')
+      .select('supplier_id') as any
+
+    const certCounts: Record<string, number> = {}
+    for (const row of certData ?? []) {
+      certCounts[row.supplier_id] = (certCounts[row.supplier_id] ?? 0) + 1
+    }
+
+    const doc = new jsPDF({ orientation: 'landscape' })
+    const pageWidth = doc.internal.pageSize.getWidth()
+
+    const img = new Image()
+    img.src = '/APPLOGO.png'
+
+    const buildPDF = () => {
+      const logoW = 50
+      const logoH = (img.naturalHeight / img.naturalWidth) * logoW
+      doc.addImage(img, 'PNG', (pageWidth - logoW) / 2, 10, logoW, logoH)
+
+      let y = 12 + logoH
+
+      doc.setFontSize(24)
+      doc.setFont('helvetica', 'bold')
+      doc.text('Approved Supplier / Service Provider', pageWidth / 2, y + 10, { align: 'center' })
+
+      doc.setFontSize(11)
+      doc.setFont('helvetica', 'normal')
+      doc.text('Woodward Foods Australia', pageWidth / 2, y + 18, { align: 'center' })
+
+      doc.setFontSize(10)
+      doc.setTextColor(100)
+      doc.text('334C River Rd. Swan Hill VIC 3585', pageWidth / 2, y + 24, { align: 'center' })
+      doc.setTextColor(0)
+
+      autoTable(doc, {
+        startY: y + 32,
+        head: [['#', 'Supplier Name', 'Vendor Type', 'Contact Person', 'Email', 'Phone', 'Certificates']],
+        body: filteredSuppliers.map((s, i) => [
+          i + 1,
+          s.name,
+          (s as any).vendor_type || 'Supplier',
+          s.contact || '-',
+          s.email || '-',
+          s.phone || '-',
+          certCounts[s.id] ? 'Yes' : 'No',
+        ]),
+        headStyles: { fillColor: [40, 54, 61], textColor: 255, fontStyle: 'bold' },
+        alternateRowStyles: { fillColor: [245, 248, 249] },
+        columnStyles: {
+          0: { cellWidth: 10, halign: 'center' },
+          6: { cellWidth: 28, halign: 'center' },
+        },
+        styles: { fontSize: 9, cellPadding: 3 },
+      })
+
+      doc.save('Approved_Suppliers.pdf')
+    }
+
+    img.onload = buildPDF
+    img.onerror = buildPDF
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -347,10 +414,16 @@ export function SuppliersPage() {
           <h1 className="text-3xl font-bold tracking-tight">Suppliers</h1>
           <p className="text-muted-foreground">Manage supplier information and certificates</p>
         </div>
-        <Button onClick={() => handleOpenDialog()}>
-          <Plus className="mr-2 h-4 w-4" />
-          Add Supplier
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={handleExportPDF}>
+            <FileDown className="mr-2 h-4 w-4" />
+            Export PDF
+          </Button>
+          <Button onClick={() => handleOpenDialog()}>
+            <Plus className="mr-2 h-4 w-4" />
+            Add Supplier
+          </Button>
+        </div>
       </div>
 
       {/* Search */}

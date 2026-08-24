@@ -272,7 +272,7 @@ export function SDSPage() {
   }
 
   const handleExportPDF = () => {
-    const doc = new jsPDF()
+    const doc = new jsPDF({ orientation: 'landscape' })
     const pageWidth = doc.internal.pageSize.getWidth()
 
     // Load logo and build PDF
@@ -281,7 +281,7 @@ export function SDSPage() {
     img.onload = () => {
       // Logo — centered at top
       const logoW = 60
-      const logoH = (img.height / img.width) * logoW
+      const logoH = (img.naturalHeight / img.naturalWidth) * logoW
       doc.addImage(img, 'PNG', (pageWidth - logoW) / 2, 12, logoW, logoH)
 
       let y = 14 + logoH
