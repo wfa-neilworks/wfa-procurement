@@ -556,6 +556,7 @@ export function SDSPage() {
                 <option>Refrigeration / Cooling</option>
                 <option>Boiler / Steam Treatment</option>
                 <option>Laboratory</option>
+                <option>Meat Branding Ink</option>
                 <option>Other / General</option>
               </select>
             </div>
