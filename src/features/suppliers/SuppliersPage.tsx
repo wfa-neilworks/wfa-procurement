@@ -47,6 +47,8 @@ export function SuppliersPage() {
     email: '',
     phone: '',
     vendor_type: 'Supplier' as 'Supplier' | 'Service Provider',
+    category: 'Non FC' as 'Non FC' | 'Food Contact',
+    items_summary: '',
   })
 
   // View supplier details dialog
@@ -128,6 +130,8 @@ export function SuppliersPage() {
         email: supplier.email || '',
         phone: supplier.phone || '',
         vendor_type: (supplier as any).vendor_type || 'Supplier',
+        category: (supplier as any).category || 'Non FC',
+        items_summary: (supplier as any).items_summary || '',
       })
     } else {
       setEditingSupplier(null)
@@ -137,6 +141,8 @@ export function SuppliersPage() {
         email: '',
         phone: '',
         vendor_type: 'Supplier',
+        category: 'Non FC',
+        items_summary: '',
       })
     }
     setIsDialogOpen(true)
@@ -163,6 +169,8 @@ export function SuppliersPage() {
           email: formData.email || null,
           phone: formData.phone || null,
           vendor_type: formData.vendor_type,
+          category: formData.category,
+          items_summary: formData.items_summary || null,
         } as any
 
         const { error } = await supabase
@@ -179,6 +187,8 @@ export function SuppliersPage() {
           email: formData.email || null,
           phone: formData.phone || null,
           vendor_type: formData.vendor_type,
+          category: formData.category,
+          items_summary: formData.items_summary || null,
         } as any
 
         const { error } = await supabase.from('suppliers').insert(insertData)
@@ -382,11 +392,13 @@ export function SuppliersPage() {
 
       autoTable(doc, {
         startY: y + 32,
-        head: [['#', 'Supplier Name', 'Vendor Type', 'Contact Person', 'Email', 'Phone', 'Certificates']],
+        head: [['#', 'Supplier Name', 'Vendor Type', 'Category', 'Items Summary', 'Contact', 'Email', 'Phone', 'Certs']],
         body: filteredSuppliers.map((s, i) => [
           i + 1,
           s.name,
           (s as any).vendor_type || 'Supplier',
+          (s as any).category || 'Non FC',
+          (s as any).items_summary || '-',
           s.contact || '-',
           s.email || '-',
           s.phone || '-',
@@ -395,10 +407,10 @@ export function SuppliersPage() {
         headStyles: { fillColor: [40, 54, 61], textColor: 255, fontStyle: 'bold' },
         alternateRowStyles: { fillColor: [245, 248, 249] },
         columnStyles: {
-          0: { cellWidth: 10, halign: 'center' },
-          6: { cellWidth: 28, halign: 'center' },
+          0: { cellWidth: 8, halign: 'center' },
+          8: { cellWidth: 14, halign: 'center' },
         },
-        styles: { fontSize: 9, cellPadding: 3 },
+        styles: { fontSize: 8, cellPadding: 3 },
       })
 
       // Add footers after all pages are rendered
@@ -470,6 +482,8 @@ export function SuppliersPage() {
               <TableRow>
                 <TableHead>Supplier Name</TableHead>
                 <TableHead>Vendor Type</TableHead>
+                <TableHead>Category</TableHead>
+                <TableHead>Items Summary</TableHead>
                 <TableHead>Contact Person</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Phone</TableHead>
@@ -497,6 +511,14 @@ export function SuppliersPage() {
                       <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${(supplier as any).vendor_type === 'Service Provider' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}`}>
                         {(supplier as any).vendor_type || 'Supplier'}
                       </span>
+                    </TableCell>
+                    <TableCell>
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${(supplier as any).category === 'Food Contact' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`}>
+                        {(supplier as any).category || 'Non FC'}
+                      </span>
+                    </TableCell>
+                    <TableCell className="max-w-[180px] truncate text-sm text-muted-foreground" title={(supplier as any).items_summary || ''}>
+                      {(supplier as any).items_summary || '-'}
                     </TableCell>
                     <TableCell>{supplier.contact || '-'}</TableCell>
                     <TableCell>
@@ -567,16 +589,39 @@ export function SuppliersPage() {
                 required
               />
             </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-sm font-medium">Vendor Type *</label>
+                <select
+                  value={formData.vendor_type}
+                  onChange={(e) => setFormData({ ...formData, vendor_type: e.target.value as any })}
+                  className="w-full mt-1 rounded-md border px-3 py-2 text-sm bg-background"
+                >
+                  <option value="Supplier">Supplier</option>
+                  <option value="Service Provider">Service Provider</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-sm font-medium">Category *</label>
+                <select
+                  value={formData.category}
+                  onChange={(e) => setFormData({ ...formData, category: e.target.value as any })}
+                  className="w-full mt-1 rounded-md border px-3 py-2 text-sm bg-background"
+                >
+                  <option value="Non FC">Non FC</option>
+                  <option value="Food Contact">Food Contact</option>
+                </select>
+              </div>
+            </div>
             <div>
-              <label className="text-sm font-medium">Vendor Type *</label>
-              <select
-                value={formData.vendor_type}
-                onChange={(e) => setFormData({ ...formData, vendor_type: e.target.value as any })}
-                className="w-full mt-1 rounded-md border px-3 py-2 text-sm bg-background"
-              >
-                <option value="Supplier">Supplier</option>
-                <option value="Service Provider">Service Provider</option>
-              </select>
+              <label className="text-sm font-medium">Items Summary</label>
+              <textarea
+                value={formData.items_summary}
+                onChange={(e) => setFormData({ ...formData, items_summary: e.target.value })}
+                placeholder="e.g. Shrink bags, cartons, liners, soaker pads..."
+                rows={3}
+                className="w-full mt-1 rounded-md border px-3 py-2 text-sm bg-background resize-none"
+              />
             </div>
             <div>
               <label className="text-sm font-medium">Contact Person</label>
@@ -635,6 +680,16 @@ export function SuppliersPage() {
                   <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${(viewingSupplier as any).vendor_type === 'Service Provider' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}`}>
                     {(viewingSupplier as any).vendor_type || 'Supplier'}
                   </span>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Category</p>
+                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${(viewingSupplier as any).category === 'Food Contact' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`}>
+                    {(viewingSupplier as any).category || 'Non FC'}
+                  </span>
+                </div>
+                <div className="col-span-2">
+                  <p className="text-sm text-gray-600">Items Summary</p>
+                  <p className="font-medium">{(viewingSupplier as any).items_summary || '-'}</p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-600">Contact Person</p>
