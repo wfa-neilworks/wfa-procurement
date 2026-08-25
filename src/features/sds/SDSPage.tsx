@@ -47,6 +47,7 @@ export function SDSPage() {
     pdf_url: '',
     valid_since: '',
     valid_until: '',
+    category: 'Other / General',
   })
 
   // File upload state
@@ -99,6 +100,7 @@ export function SDSPage() {
         pdf_url: chemical.pdf_url || '',
         valid_since: chemical.valid_since || '',
         valid_until: chemical.valid_until || '',
+        category: (chemical as any).category || 'Other / General',
       })
     } else {
       setEditingChemical(null)
@@ -108,6 +110,7 @@ export function SDSPage() {
         pdf_url: '',
         valid_since: '',
         valid_until: '',
+        category: 'Other / General',
       })
     }
     setSelectedFile(null)
@@ -187,33 +190,35 @@ export function SDSPage() {
         }
 
         // Update existing chemical
-        const updateData: SDSChemicalUpdate = {
+        const updateData = {
           name: formData.name,
           location: formData.location,
           pdf_url: pdfUrl || null,
           valid_since: formData.valid_since || null,
           valid_until: formData.valid_until || null,
+          category: formData.category,
         }
 
         const { error } = await supabase
           .from('sds_chemicals')
-          .update(updateData)
+          .update(updateData as any)
           .eq('id', editingChemical.id)
 
         if (error) throw error
         toast.success(`Successfully updated chemical "${formData.name}"`)
       } else {
         // Create new chemical first
-        const insertData: SDSChemicalInsert = {
+        const insertData = {
           name: formData.name,
           location: formData.location,
           valid_since: formData.valid_since || null,
           valid_until: formData.valid_until || null,
+          category: formData.category,
         }
 
         const { data, error } = await supabase
           .from('sds_chemicals')
-          .insert(insertData)
+          .insert(insertData as any)
           .select()
           .single()
 
@@ -307,10 +312,11 @@ export function SDSPage() {
       // Table
       autoTable(doc, {
         startY: y + 32,
-        head: [['#', 'Chemical Name', 'Location', 'SDS']],
+        head: [['#', 'Chemical Name', 'Category', 'Location', 'SDS']],
         body: filteredChemicals.map((c, i) => [
           i + 1,
           c.name,
+          (c as any).category || 'Other / General',
           c.location,
           c.pdf_url ? 'Yes' : 'No',
         ]),
@@ -318,7 +324,8 @@ export function SDSPage() {
         alternateRowStyles: { fillColor: [245, 248, 249] },
         columnStyles: {
           0: { cellWidth: 12, halign: 'center' },
-          3: { cellWidth: 20, halign: 'center' },
+          2: { cellWidth: 44 },
+          4: { cellWidth: 20, halign: 'center' },
         },
         styles: { fontSize: 10, cellPadding: 4 },
       })
@@ -359,11 +366,11 @@ export function SDSPage() {
       doc.setTextColor(0)
       autoTable(doc, {
         startY: y + 32,
-        head: [['#', 'Chemical Name', 'Location', 'SDS']],
-        body: filteredChemicals.map((c, i) => [i + 1, c.name, c.location, c.pdf_url ? 'Yes' : 'No']),
+        head: [['#', 'Chemical Name', 'Category', 'Location', 'SDS']],
+        body: filteredChemicals.map((c, i) => [i + 1, c.name, (c as any).category || 'Other / General', c.location, c.pdf_url ? 'Yes' : 'No']),
         headStyles: { fillColor: [40, 54, 61], textColor: 255, fontStyle: 'bold' },
         alternateRowStyles: { fillColor: [245, 248, 249] },
-        columnStyles: { 0: { cellWidth: 12, halign: 'center' }, 3: { cellWidth: 20, halign: 'center' } },
+        columnStyles: { 0: { cellWidth: 12, halign: 'center' }, 2: { cellWidth: 44 }, 4: { cellWidth: 20, halign: 'center' } },
         styles: { fontSize: 10, cellPadding: 4 },
       })
       const totalPages = (doc as any).internal.getNumberOfPages()
@@ -429,6 +436,7 @@ export function SDSPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Chemical Name</TableHead>
+                <TableHead>Category</TableHead>
                 <TableHead>Storage Location</TableHead>
                 <TableHead>SDS Document</TableHead>
                 <TableHead>Last Updated</TableHead>
@@ -438,13 +446,13 @@ export function SDSPage() {
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                     Loading...
                   </TableCell>
                 </TableRow>
               ) : filteredChemicals.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                     {searchTerm ? 'No chemicals found matching your search' : 'No chemicals registered yet'}
                   </TableCell>
                 </TableRow>
@@ -452,6 +460,11 @@ export function SDSPage() {
                 filteredChemicals.map((chemical) => (
                   <TableRow key={chemical.id}>
                     <TableCell className="font-medium">{chemical.name}</TableCell>
+                    <TableCell>
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                        {(chemical as any).category || 'Other / General'}
+                      </span>
+                    </TableCell>
                     <TableCell>{chemical.location}</TableCell>
                     <TableCell>
                       {chemical.pdf_url ? (
@@ -526,6 +539,25 @@ export function SDSPage() {
                 placeholder="e.g., Chemical Storage Room A, Shelf 3"
                 required
               />
+            </div>
+
+            <div>
+              <label className="text-sm font-medium">Category</label>
+              <select
+                value={formData.category}
+                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                className="w-full rounded-md border px-3 py-2 text-sm mt-1"
+                style={{ borderColor: 'hsl(var(--border))', backgroundColor: 'hsl(var(--background))' }}
+              >
+                <option>Clean / Sanitation</option>
+                <option>Water Treatment</option>
+                <option>Equipment / Machinery</option>
+                <option>Pest Control</option>
+                <option>Refrigeration / Cooling</option>
+                <option>Boiler / Steam Treatment</option>
+                <option>Laboratory</option>
+                <option>Other / General</option>
+              </select>
             </div>
 
             {/* Validity Dates */}
