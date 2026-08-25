@@ -407,8 +407,8 @@ export function SuppliersPage() {
         headStyles: { fillColor: [40, 54, 61], textColor: 255, fontStyle: 'bold' },
         alternateRowStyles: { fillColor: [245, 248, 249] },
         columnStyles: {
-          0: { cellWidth: 8, halign: 'center' },
-          8: { cellWidth: 14, halign: 'center' },
+          0: { cellWidth: 14, halign: 'center' },
+          8: { cellWidth: 16, halign: 'center' },
         },
         styles: { fontSize: 8, cellPadding: 3 },
       })
