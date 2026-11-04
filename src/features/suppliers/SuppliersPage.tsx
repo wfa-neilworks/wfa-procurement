@@ -387,66 +387,74 @@ export function SuppliersPage() {
   }
 
   return (
-    <div className="space-y-5">
-      {/* Page Header */}
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-xl font-bold text-slate-800 leading-tight">Suppliers</h1>
-          <p className="text-sm text-slate-400 mt-0.5">Manage supplier information and certificates</p>
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <button
-            onClick={handleExportPDF}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all hover:bg-slate-200 active:scale-95"
-            style={{ backgroundColor: '#f1f5f9', borderColor: '#cbd5e1', color: '#1e293b', border: '1px solid #cbd5e1' }}
-          >
-            <FileDown className="h-4 w-4" />
-            Export PDF
-          </button>
-          <button
-            onClick={() => handleOpenDialog()}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white transition-all hover:opacity-90 active:scale-95"
-            style={{ backgroundColor: '#1a2535' }}
-          >
-            <Plus className="h-4 w-4" />
-            Add Supplier
-          </button>
-        </div>
+    <div className="flex flex-col min-h-0">
+      {/* Page title — scrolls away */}
+      <div className="pb-5">
+        <h1 className="text-xl font-bold text-slate-800 leading-tight">Suppliers</h1>
+        <p className="text-sm text-slate-400 mt-0.5">Manage supplier information and certificates</p>
       </div>
 
-      {/* Search + Count */}
-      <div className="flex items-center gap-4">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
-          <input
-            type="text"
-            placeholder="Search by name, contact, or email…"
-            value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
-            className={inputCls + ' pl-9 pr-9'}
-          />
-          {searchTerm && (
+      {/* ── Sticky toolbar: action buttons + search ── */}
+      <div
+        className="sticky top-0 z-10 bg-slate-50 pb-3"
+        style={{ boxShadow: '0 2px 8px -2px rgba(0,0,0,0.08)' }}
+      >
+        <div className="flex items-center justify-between gap-4 mb-3">
+          {/* Search + Count */}
+          <div className="flex items-center gap-4 flex-1 min-w-0">
+            <div className="relative flex-1 max-w-sm">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+              <input
+                type="text"
+                placeholder="Search by name, contact, or email…"
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+                className={inputCls + ' pl-9 pr-9'}
+              />
+              {searchTerm && (
+                <button
+                  onClick={() => setSearchTerm('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              )}
+            </div>
+            <span className="text-sm font-medium text-slate-500 shrink-0">
+              <span className="font-bold text-slate-700">{filteredSuppliers.length}</span>
+              {' '}supplier{filteredSuppliers.length !== 1 ? 's' : ''}
+              {searchTerm && suppliers.length !== filteredSuppliers.length && (
+                <span className="text-slate-400"> of {suppliers.length}</span>
+              )}
+            </span>
+          </div>
+
+          {/* Action buttons */}
+          <div className="flex items-center gap-2 shrink-0">
             <button
-              onClick={() => setSearchTerm('')}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+              onClick={handleExportPDF}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all hover:bg-slate-200 active:scale-95"
+              style={{ backgroundColor: '#f1f5f9', color: '#1e293b', border: '1px solid #cbd5e1' }}
             >
-              <X className="h-3.5 w-3.5" />
+              <FileDown className="h-4 w-4" />
+              Export PDF
             </button>
-          )}
+            <button
+              onClick={() => handleOpenDialog()}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white transition-all hover:opacity-90 active:scale-95"
+              style={{ backgroundColor: '#1a2535' }}
+            >
+              <Plus className="h-4 w-4" />
+              Add Supplier
+            </button>
+          </div>
         </div>
-        <span className="text-sm font-medium text-slate-500 shrink-0">
-          <span className="font-bold text-slate-700">{filteredSuppliers.length}</span>
-          {' '}supplier{filteredSuppliers.length !== 1 ? 's' : ''}
-          {searchTerm && suppliers.length !== filteredSuppliers.length && (
-            <span className="text-slate-400"> of {suppliers.length}</span>
-          )}
-        </span>
       </div>
 
       {/* Table */}
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-x-auto">
         <table className="w-full text-sm border-collapse" style={{ minWidth: 820 }}>
-          <thead style={{ position: 'sticky', top: 0, zIndex: 10 }}>
+          <thead style={{ position: 'sticky', top: 0, zIndex: 9 }}>
             <tr style={{ backgroundColor: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
               <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Supplier Name</th>
               <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide whitespace-nowrap">Vendor Type</th>
