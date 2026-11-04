@@ -388,17 +388,35 @@ export function SuppliersPage() {
 
   return (
     <div className="flex flex-col min-h-0">
-      {/* Page title — scrolls away */}
-      <div className="pb-5">
-        <h1 className="text-xl font-bold text-slate-800 leading-tight">Suppliers</h1>
-        <p className="text-sm text-slate-400 mt-0.5">Manage supplier information and certificates</p>
-      </div>
-
-      {/* ── Sticky toolbar: action buttons + search ── */}
+      {/* ── Sticky toolbar: title + action buttons + search ── */}
       <div
         className="sticky top-0 z-10 bg-slate-50 pb-3"
         style={{ boxShadow: '0 2px 8px -2px rgba(0,0,0,0.08)' }}
       >
+        <div className="flex items-start justify-between gap-4 mb-3">
+          <div>
+            <h1 className="text-xl font-bold text-slate-800 leading-tight">Suppliers</h1>
+            <p className="text-sm text-slate-400 mt-0.5">Manage supplier information and certificates</p>
+          </div>
+          <div className="flex items-center gap-2 shrink-0 pt-0.5">
+            <button
+              onClick={handleExportPDF}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all hover:bg-slate-200 active:scale-95"
+              style={{ backgroundColor: '#f1f5f9', color: '#1e293b', border: '1px solid #cbd5e1' }}
+            >
+              <FileDown className="h-4 w-4" />
+              Export PDF
+            </button>
+            <button
+              onClick={() => handleOpenDialog()}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white transition-all hover:opacity-90 active:scale-95"
+              style={{ backgroundColor: '#1a2535' }}
+            >
+              <Plus className="h-4 w-4" />
+              Add Supplier
+            </button>
+          </div>
+        </div>
         <div className="flex items-center justify-between gap-4 mb-3">
           {/* Search + Count */}
           <div className="flex items-center gap-4 flex-1 min-w-0">
@@ -427,26 +445,6 @@ export function SuppliersPage() {
                 <span className="text-slate-400"> of {suppliers.length}</span>
               )}
             </span>
-          </div>
-
-          {/* Action buttons */}
-          <div className="flex items-center gap-2 shrink-0">
-            <button
-              onClick={handleExportPDF}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all hover:bg-slate-200 active:scale-95"
-              style={{ backgroundColor: '#f1f5f9', color: '#1e293b', border: '1px solid #cbd5e1' }}
-            >
-              <FileDown className="h-4 w-4" />
-              Export PDF
-            </button>
-            <button
-              onClick={() => handleOpenDialog()}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white transition-all hover:opacity-90 active:scale-95"
-              style={{ backgroundColor: '#1a2535' }}
-            >
-              <Plus className="h-4 w-4" />
-              Add Supplier
-            </button>
           </div>
         </div>
       </div>
