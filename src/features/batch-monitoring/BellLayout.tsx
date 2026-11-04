@@ -31,8 +31,8 @@ function DropdownSection({ name, base, icon: Icon }: { name: string; base: strin
         onClick={() => setOpen(o => !o)}
         className="flex items-center justify-between w-full px-3 py-2.5 rounded-lg transition-all"
         style={{
-          color: isAnyActive ? '#e2f0ff' : '#94b8d4',
-          backgroundColor: isAnyActive ? 'rgba(22,119,232,0.12)' : 'transparent',
+          color: '#ffffff',
+          backgroundColor: isAnyActive ? '#0f2035' : 'transparent',
         }}
         onMouseEnter={e => { if (!isAnyActive) (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(255,255,255,0.05)' }}
         onMouseLeave={e => { if (!isAnyActive) (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent' }}
@@ -48,15 +48,17 @@ function DropdownSection({ name, base, icon: Icon }: { name: string; base: strin
       </button>
 
       {open && (
-        <div className="mt-0.5 ml-4 pl-3 space-y-px" style={{ borderLeft: '1px solid rgba(255,255,255,0.08)' }}>
+        <div className="mt-0.5 ml-3 pl-3 space-y-px" style={{ borderLeft: '1px solid #1e3a5a' }}>
           {categories.map(cat => (
             <NavLink
               key={cat.slug}
               to={`${base}/${cat.slug}`}
-              className="block px-2 py-1.5 rounded-md text-xs font-medium transition-all"
+              className="block px-2 py-2 rounded-md text-xs font-medium transition-all"
               style={({ isActive }) => ({
-                color: isActive ? '#fff' : '#7aaac8',
-                backgroundColor: isActive ? 'rgba(22,119,232,0.2)' : 'transparent',
+                color: isActive ? '#ffffff' : 'rgba(255,255,255,0.65)',
+                backgroundColor: isActive ? '#0f2035' : 'transparent',
+                borderLeft: isActive ? '2px solid #2a7abf' : '2px solid transparent',
+                marginLeft: -1,
               })}
             >
               {cat.name}
@@ -79,7 +81,6 @@ export function BellLayout() {
   }
 
   const displayName = profile?.full_name ?? 'User'
-  const initials = displayName.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)
 
   return (
     <div className="flex h-screen w-screen overflow-hidden" style={{ fontFamily: "'Inter', system-ui, sans-serif" }}>
@@ -87,11 +88,11 @@ export function BellLayout() {
       {/* ── BELL Sidebar ── */}
       <aside
         className="w-56 shrink-0 flex flex-col h-full"
-        style={{ backgroundColor: '#15263D', borderRight: '1px solid rgba(255,255,255,0.07)' }}
+        style={{ backgroundColor: '#0a0f1a', borderRight: '1px solid #1a2d42' }}
       >
         {/* Logo */}
-        <div className="px-4 py-4 shrink-0" style={{ borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
-          <img src="/BellV3.png" alt="BELL" className="w-full h-auto block" style={{ maxHeight: '52px', objectFit: 'contain' }} />
+        <div className="px-5 py-4 shrink-0" style={{ borderBottom: '1px solid #1a2d42' }}>
+          <img src="/BellV3.png" alt="BELL" className="w-full h-auto block" />
         </div>
 
         {/* Nav */}
@@ -99,34 +100,26 @@ export function BellLayout() {
           {/* Batch Entry — primary */}
           <NavLink
             to="/batch-monitoring/entry"
-            className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-semibold w-full transition-all"
+            className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-bold w-full transition-all"
             style={({ isActive }) => isActive
-              ? { backgroundColor: '#1677E8', color: '#fff', boxShadow: '0 2px 8px rgba(22,119,232,0.35)' }
-              : { color: '#94b8d4', backgroundColor: 'transparent' }
+              ? { backgroundColor: '#1a4a7a', color: '#fff', boxShadow: '0 0 0 1px #2a6aaa' }
+              : { backgroundColor: '#0d1e30', color: '#ffffff', border: '1px solid #1e3a5a' }
             }
-            onMouseEnter={e => {
-              const el = e.currentTarget as HTMLElement
-              if (!el.getAttribute('aria-current')) el.style.backgroundColor = 'rgba(22,119,232,0.12)'
-            }}
-            onMouseLeave={e => {
-              const el = e.currentTarget as HTMLElement
-              if (!el.getAttribute('aria-current')) el.style.backgroundColor = 'transparent'
-            }}
           >
             <ScanLine className="h-4 w-4 shrink-0" />
             Batch Entry
           </NavLink>
 
-          <div className="py-2">
-            <div className="h-px" style={{ backgroundColor: 'rgba(255,255,255,0.06)' }} />
+          <div className="py-2 px-1">
+            <div className="h-px" style={{ backgroundColor: '#0f2030' }} />
           </div>
 
           {dropdownSections.map(s => (
             <DropdownSection key={s.name} {...s} />
           ))}
 
-          <div className="py-2">
-            <div className="h-px" style={{ backgroundColor: 'rgba(255,255,255,0.06)' }} />
+          <div className="py-2 px-1">
+            <div className="h-px" style={{ backgroundColor: '#0f2030' }} />
           </div>
 
           {isAdmin ? (
@@ -134,8 +127,8 @@ export function BellLayout() {
               to="/batch-monitoring/admin"
               className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium transition-all"
               style={({ isActive }) => ({
-                color: isActive ? '#e2f0ff' : '#94b8d4',
-                backgroundColor: isActive ? 'rgba(22,119,232,0.2)' : 'transparent',
+                color: isActive ? '#ffffff' : '#ffffff',
+                backgroundColor: isActive ? '#0f2035' : 'transparent',
               })}
             >
               <ShieldCheck className="h-4 w-4 shrink-0" />
@@ -145,7 +138,7 @@ export function BellLayout() {
             <button
               onClick={() => setShowRestricted(true)}
               className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium w-full text-left transition-all"
-              style={{ color: '#5a7a90', opacity: 0.6 }}
+              style={{ color: 'rgba(255,255,255,0.35)' }}
             >
               <ShieldCheck className="h-4 w-4 shrink-0" />
               Admin
@@ -155,41 +148,28 @@ export function BellLayout() {
 
         {/* Footer */}
         <div
-          className="shrink-0 px-4 py-3 text-center text-[10px] font-semibold tracking-widest"
-          style={{ color: 'rgba(255,255,255,0.2)', borderTop: '1px solid rgba(255,255,255,0.06)' }}
+          className="shrink-0 px-4 py-3 text-center text-[10px] font-bold tracking-widest"
+          style={{ color: 'rgba(255,255,255,0.3)', borderTop: '1px solid #0f2030' }}
         >
-          BELL · v1.0
+          BellEVersion-1.0
         </div>
       </aside>
 
       {/* ── Main area ── */}
-      <div className="flex-1 flex flex-col overflow-hidden" style={{ backgroundColor: '#F3F6FB' }}>
+      <div className="flex-1 flex flex-col overflow-hidden" style={{ backgroundColor: '#080d18' }}>
 
         {/* Top header */}
         <header
-          className="shrink-0 flex items-center justify-end gap-3 px-6 h-14 bg-white"
-          style={{ borderBottom: '1px solid #DFE7F0' }}
+          className="shrink-0 flex items-center justify-end gap-3 px-6 py-3"
+          style={{ borderBottom: '1px solid #1a2d42' }}
         >
-          {/* Avatar + name */}
-          <div className="flex items-center gap-2.5">
-            <div
-              className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0"
-              style={{ backgroundColor: '#1677E8' }}
-            >
-              {initials || <User className="h-4 w-4" />}
-            </div>
-            <span className="text-sm font-medium text-slate-700 hidden sm:inline">{displayName}</span>
-          </div>
-
-          <div className="w-px h-5 bg-slate-200" />
-
-          {/* Logout */}
+          <User className="h-4 w-4" style={{ color: '#4a7aaa' }} />
+          <span className="text-sm font-medium text-white">{displayName}</span>
+          <div className="w-px h-4 mx-1" style={{ backgroundColor: '#1e3a5a' }} />
           <button
             onClick={handleSignOut}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all border"
-            style={{ color: '#dc4545', borderColor: '#fecaca', backgroundColor: 'transparent' }}
-            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.backgroundColor = '#fef2f2' }}
-            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent' }}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all hover:bg-red-900/30"
+            style={{ color: '#f87171', border: '1px solid #3a1a1a' }}
           >
             <LogOut className="h-3.5 w-3.5" />
             Logout

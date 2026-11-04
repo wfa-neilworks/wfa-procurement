@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { ScanLine, CheckCircle2, XCircle, Loader2, Barcode, Wifi } from 'lucide-react'
+import { ScanLine, CheckCircle2, XCircle, Loader2 } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 
 interface ScanResult {
@@ -73,7 +73,6 @@ export function BatchEntryPage() {
   const [barcode, setBarcode] = useState('')
   const [scanning, setScanning] = useState(false)
   const [result, setResult] = useState<ScanResult | null>(null)
-  const [focused, setFocused] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => { inputRef.current?.focus() }, [])
@@ -155,183 +154,85 @@ export function BatchEntryPage() {
     }
   }
 
-  // Derive scanner status
-  const scannerStatus: 'idle' | 'scanning' | 'success' | 'error' =
-    scanning ? 'scanning' :
-    result?.ok === true ? 'success' :
-    result?.ok === false ? 'error' :
-    'idle'
-
-  const statusConfig = {
-    idle:     { dot: '#16A36A', bg: '#f0fdf4', border: '#bbf7d0', text: '#16a34a', label: 'Ready to scan' },
-    scanning: { dot: '#1677E8', bg: '#eff6ff', border: '#bfdbfe', text: '#1677E8', label: 'Scanning…'     },
-    success:  { dot: '#16A36A', bg: '#f0fdf4', border: '#bbf7d0', text: '#16a34a', label: 'Scan successful' },
-    error:    { dot: '#DC4545', bg: '#fef2f2', border: '#fecaca', text: '#dc4545', label: 'Scan failed'    },
-  }
-  const sc = statusConfig[scannerStatus]
-
   return (
     <div
-      className="flex flex-col items-center justify-center min-h-full py-12 px-4"
-      style={{ backgroundColor: '#F3F6FB' }}
+      className="flex flex-col items-center justify-center h-full min-h-screen gap-8"
+      style={{ backgroundColor: '#080d18' }}
       onClick={() => inputRef.current?.focus()}
     >
-      <div className="w-full max-w-xl space-y-8">
+      {/* Logo */}
+      <div className="w-full max-w-2xl px-6">
+        <img src="/BellV3.png" alt="BELL" style={{ width: '100%', height: 'auto', display: 'block' }} />
+      </div>
 
-        {/* BELL Logo */}
-        <div className="flex justify-center">
-          <img
-            src="/BellV3.png"
-            alt="BELL"
-            style={{ height: '72px', width: 'auto', display: 'block', objectFit: 'contain' }}
-          />
+      {/* Title */}
+      <div className="text-center space-y-1">
+        <div className="flex items-center justify-center gap-2 text-blue-400">
+          <ScanLine className="h-5 w-5" />
+          <span className="text-base font-semibold tracking-widest uppercase">Batch Entry</span>
         </div>
+        <p className="text-xs" style={{ color: '#3a5a7a' }}>Scan or type a barcode and press Enter</p>
+      </div>
 
-        {/* Heading */}
-        <div className="text-center space-y-1.5">
-          <div className="flex items-center justify-center gap-2.5" style={{ color: '#1677E8' }}>
-            <ScanLine className="h-5 w-5" />
-            <span className="text-lg font-bold tracking-widest uppercase">Batch Entry</span>
+      {/* Scan input */}
+      <div className="w-full max-w-2xl px-6">
+        <input
+          ref={inputRef}
+          type="text"
+          value={barcode}
+          onChange={e => setBarcode(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Enter') handleScan(barcode) }}
+          placeholder="Scan barcode here..."
+          autoComplete="off"
+          spellCheck={false}
+          className="w-full text-center text-3xl font-mono tracking-widest rounded-2xl outline-none border-2 transition-all"
+          style={{
+            backgroundColor: '#0d1625',
+            borderColor: barcode ? '#2a6a9a' : '#1a3a5a',
+            color: '#a0d4f5',
+            padding: '2rem 2rem',
+            caretColor: '#4a9fd4',
+          }}
+        />
+      </div>
+
+      {/* Result */}
+      <div className="flex items-center justify-center" style={{ minHeight: 220 }}>
+        {scanning && (
+          <div className="flex items-center gap-3 text-blue-300">
+            <Loader2 className="h-6 w-6 animate-spin" />
+            <span className="text-xl">Processing...</span>
           </div>
-          <p className="text-sm" style={{ color: '#64748B' }}>Scan or type a barcode and press Enter</p>
-        </div>
+        )}
 
-        {/* Scanner card */}
-        <div className="bg-white rounded-2xl shadow-sm" style={{ border: '1px solid #DFE7F0' }}>
-
-          {/* Input area */}
-          <div className="p-6">
-            <div className="relative">
-              <Barcode
-                className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 pointer-events-none"
-                style={{ color: focused || barcode ? '#1677E8' : '#94a3b8' }}
-              />
-              <input
-                ref={inputRef}
-                type="text"
-                value={barcode}
-                onChange={e => setBarcode(e.target.value)}
-                onKeyDown={e => { if (e.key === 'Enter') handleScan(barcode) }}
-                onFocus={() => setFocused(true)}
-                onBlur={() => setFocused(false)}
-                placeholder="Scan barcode here…"
-                autoComplete="off"
-                spellCheck={false}
-                className="w-full text-center font-mono tracking-widest rounded-xl outline-none transition-all"
-                style={{
-                  fontSize: '1.5rem',
-                  padding: '1.25rem 3rem',
-                  backgroundColor: '#F8FAFD',
-                  border: `2px solid ${focused || barcode ? '#1677E8' : '#DFE7F0'}`,
-                  color: '#172B45',
-                  caretColor: '#1677E8',
-                  boxShadow: focused ? '0 0 0 4px rgba(22,119,232,0.1)' : 'none',
-                }}
-              />
-            </div>
-          </div>
-
-          {/* Status bar */}
-          <div
-            className="flex items-center justify-between px-6 py-3 rounded-b-2xl"
-            style={{ backgroundColor: sc.bg, borderTop: `1px solid ${sc.border}` }}
-          >
-            <div className="flex items-center gap-2">
-              <span
-                className="inline-block w-2 h-2 rounded-full"
-                style={{
-                  backgroundColor: sc.dot,
-                  boxShadow: scannerStatus === 'scanning' ? `0 0 0 3px ${sc.border}` : 'none',
-                  animation: scannerStatus === 'scanning' ? 'pulse 1.5s infinite' : 'none',
-                }}
-              />
-              <span className="text-xs font-semibold" style={{ color: sc.text }}>{sc.label}</span>
-            </div>
-            <div className="flex items-center gap-1.5" style={{ color: '#94a3b8' }}>
-              <Wifi className="h-3 w-3" />
-              <span className="text-[10px] font-medium">Scanner ready</span>
+        {!scanning && result && result.ok && (
+          <div className="flex flex-col items-center gap-5 text-center">
+            <CheckCircle2 className="h-20 w-20" style={{ color: '#22c55e' }} />
+            <span className="text-3xl font-bold" style={{ color: '#22c55e' }}>Batch Logged</span>
+            <div className="space-y-2 mt-1">
+              <div className="text-lg font-semibold text-white">{result.productCode} &mdash; {result.productName}</div>
+              <div className="flex items-center justify-center gap-6 text-sm" style={{ color: '#6ab0d4' }}>
+                <span>Batch <span className="font-mono font-bold text-white text-base">{result.batchRef}</span></span>
+                {result.ctn !== '0' && (
+                  <span>CTN <span className="font-mono font-bold text-white text-base">{result.ctn}</span></span>
+                )}
+              </div>
+              <div className="text-sm mt-1" style={{ color: '#3a6a8a' }}>{result.supplier}</div>
             </div>
           </div>
-        </div>
+        )}
 
-        {/* Result area */}
-        <div className="min-h-[160px] flex items-center justify-center">
-          {scanning && (
-            <div className="flex items-center gap-3" style={{ color: '#1677E8' }}>
-              <Loader2 className="h-6 w-6 animate-spin" />
-              <span className="text-base font-medium">Processing barcode…</span>
-            </div>
-          )}
+        {!scanning && result && !result.ok && (
+          <div className="flex flex-col items-center gap-4 text-center">
+            <XCircle className="h-16 w-16" style={{ color: '#ef4444' }} />
+            <span className="text-2xl font-bold" style={{ color: '#ef4444' }}>{result.message}</span>
+            {result.detail && <span className="text-sm font-mono" style={{ color: '#7a3a3a' }}>{result.detail}</span>}
+          </div>
+        )}
 
-          {!scanning && result?.ok === true && (
-            <div
-              className="w-full rounded-2xl p-6 text-center space-y-4"
-              style={{ backgroundColor: '#f0fdf4', border: '1px solid #bbf7d0' }}
-            >
-              <div className="flex items-center justify-center gap-2" style={{ color: '#16a34a' }}>
-                <CheckCircle2 className="h-7 w-7" />
-                <span className="text-xl font-bold">Batch Logged</span>
-              </div>
-              <div className="space-y-2">
-                <div className="text-base font-semibold text-slate-800">
-                  {result.productCode} — {result.productName}
-                </div>
-                <div className="flex items-center justify-center gap-6 text-sm">
-                  <div className="flex flex-col items-center gap-0.5">
-                    <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Batch Ref</span>
-                    <span className="font-mono font-bold text-slate-700">{result.batchRef}</span>
-                  </div>
-                  {result.ctn !== '0' && (
-                    <div className="flex flex-col items-center gap-0.5">
-                      <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">CTN</span>
-                      <span className="font-mono font-bold text-slate-700">{result.ctn}</span>
-                    </div>
-                  )}
-                  {result.supplier && (
-                    <div className="flex flex-col items-center gap-0.5">
-                      <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Supplier</span>
-                      <span className="font-semibold text-slate-600">{result.supplier}</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {!scanning && result?.ok === false && (
-            <div
-              className="w-full rounded-2xl p-6 text-center space-y-3"
-              style={{ backgroundColor: '#fef2f2', border: '1px solid #fecaca' }}
-            >
-              <div className="flex items-center justify-center gap-2" style={{ color: '#dc4545' }}>
-                <XCircle className="h-7 w-7" />
-                <span className="text-xl font-bold">{result.message}</span>
-              </div>
-              {result.detail && (
-                <p className="text-sm font-mono text-red-600/70">{result.detail}</p>
-              )}
-            </div>
-          )}
-
-          {!scanning && !result && (
-            <div className="text-center space-y-2">
-              <div
-                className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto"
-                style={{ backgroundColor: '#eff6ff' }}
-              >
-                <ScanLine className="h-8 w-8" style={{ color: '#1677E8' }} />
-              </div>
-              <p className="text-sm font-medium" style={{ color: '#94a3b8' }}>
-                Waiting for scan…
-              </p>
-            </div>
-          )}
-        </div>
-
-        {/* Click-anywhere hint */}
-        <p className="text-center text-xs" style={{ color: '#cbd5e1' }}>
-          Click anywhere on the page to focus the scanner
-        </p>
+        {!scanning && !result && (
+          <div className="text-sm" style={{ color: '#1a3a5a' }}>Ready to scan</div>
+        )}
       </div>
     </div>
   )
