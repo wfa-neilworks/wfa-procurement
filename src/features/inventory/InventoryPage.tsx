@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import {
-  Plus, Pencil, Trash2, Search, TrendingUp, TrendingDown,
+  Plus, Pencil, Trash2, Search, PlusCircle, MinusCircle,
   Package, AlertTriangle, CheckCircle, XCircle, Loader2,
   ArrowUpDown, X,
 } from 'lucide-react'
@@ -251,10 +251,19 @@ export function InventoryPage() {
     </button>
   )
 
+  // Filter tab config with counts
+  const filterTabs: { key: StockFilter; label: string; count: number; activeColor: string; activeBg: string; activeBorder: string }[] = [
+    { key: 'all',      label: 'All',      count: total,              activeColor: '#1d4ed8', activeBg: '#eff6ff', activeBorder: '#bfdbfe' },
+    { key: 'healthy',  label: 'Healthy',  count: healthy,            activeColor: '#16a34a', activeBg: '#f0fdf4', activeBorder: '#bbf7d0' },
+    { key: 'low',      label: 'Low',      count: lowCount,           activeColor: '#92400e', activeBg: '#fffbeb', activeBorder: '#fde68a' },
+    { key: 'critical', label: 'Critical', count: critical,           activeColor: '#991b1b', activeBg: '#fef2f2', activeBorder: '#fecaca' },
+    { key: 'out',      label: 'Out',      count: outCount,           activeColor: '#7f1d1d', activeBg: '#fef2f2', activeBorder: '#fca5a5' },
+  ]
+
   return (
-    <div className="space-y-5">
-      {/* Page Header */}
-      <div className="flex items-start justify-between gap-4">
+    <div className="flex flex-col min-h-0">
+      {/* Page Header — scrolls away */}
+      <div className="flex items-start justify-between gap-4 pb-5">
         <div>
           <h1 className="text-xl font-bold text-slate-800 leading-tight">{categoryLabel}</h1>
           <p className="text-sm text-slate-400 mt-0.5">Manage inventory and stock levels</p>
@@ -269,72 +278,90 @@ export function InventoryPage() {
         </button>
       </div>
 
-      {/* Summary Metrics */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        {[
-          { label: 'Total Products', value: total, icon: Package, color: '#2d9da8', bg: '#f0fdfe', border: '#a5f3fc' },
-          { label: 'Healthy Stock', value: healthy, icon: CheckCircle, color: '#16a34a', bg: '#f0fdf4', border: '#bbf7d0' },
-          { label: 'Low / Critical', value: lowCount + critical, icon: AlertTriangle, color: '#ca8a04', bg: '#fefce8', border: '#fde68a' },
-          { label: 'Out of Stock', value: outCount, icon: XCircle, color: '#dc2626', bg: '#fef2f2', border: '#fecaca' },
-        ].map(m => (
-          <div key={m.label} className="bg-white rounded-xl border p-4 flex items-center gap-3" style={{ borderColor: m.border }}>
-            <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: m.bg }}>
-              <m.icon className="h-4.5 w-4.5" style={{ color: m.color }} />
+      {/* ── Sticky inventory toolbar ── */}
+      <div
+        className="sticky top-0 z-10 bg-slate-50 pb-3"
+        style={{ boxShadow: '0 2px 8px -2px rgba(0,0,0,0.08)' }}
+      >
+        {/* Summary Metrics */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
+          {[
+            { label: 'Total Products', value: total,              icon: Package,       color: '#2d9da8', bg: '#f0fdfe', border: '#a5f3fc' },
+            { label: 'Healthy Stock',  value: healthy,            icon: CheckCircle,   color: '#16a34a', bg: '#f0fdf4', border: '#bbf7d0' },
+            { label: 'Low / Critical', value: lowCount + critical, icon: AlertTriangle, color: '#ca8a04', bg: '#fefce8', border: '#fde68a' },
+            { label: 'Out of Stock',   value: outCount,            icon: XCircle,       color: '#dc2626', bg: '#fef2f2', border: '#fecaca' },
+          ].map(m => (
+            <div key={m.label} className="bg-white rounded-xl border p-3.5 flex items-center gap-3" style={{ borderColor: m.border }}>
+              <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: m.bg }}>
+                <m.icon className="h-4 w-4" style={{ color: m.color }} />
+              </div>
+              <div>
+                <div className="text-xl font-bold leading-none" style={{ color: m.color }}>{m.value}</div>
+                <div className="text-xs text-slate-500 mt-0.5">{m.label}</div>
+              </div>
             </div>
-            <div>
-              <div className="text-xl font-bold leading-none" style={{ color: m.color }}>{m.value}</div>
-              <div className="text-xs text-slate-500 mt-0.5">{m.label}</div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Search + Filter Toolbar */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
-          <input
-            type="text"
-            placeholder="Search by code, description, or supplier…"
-            value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
-            className={inputCls + ' pl-9 pr-9'}
-          />
-          {searchTerm && (
-            <button onClick={() => setSearchTerm('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
-              <X className="h-3.5 w-3.5" />
-            </button>
-          )}
-        </div>
-        <div className="flex gap-1 p-1 rounded-lg bg-slate-100 shrink-0">
-          {([
-            { key: 'all', label: 'All' },
-            { key: 'healthy', label: 'Healthy' },
-            { key: 'low', label: 'Low' },
-            { key: 'critical', label: 'Critical' },
-            { key: 'out', label: 'Out' },
-          ] as { key: StockFilter; label: string }[]).map(f => (
-            <button
-              key={f.key}
-              onClick={() => setStockFilter(f.key)}
-              className="px-3 py-1.5 rounded-md text-xs font-semibold transition-all"
-              style={stockFilter === f.key
-                ? { backgroundColor: 'white', color: '#1a2535', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }
-                : { color: '#64748b' }
-              }
-            >
-              {f.label}
-            </button>
           ))}
+        </div>
+
+        {/* Search + Filter Toolbar */}
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+            <input
+              type="text"
+              placeholder="Search by code, description, or supplier…"
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+              className={inputCls + ' pl-9 pr-9'}
+            />
+            {searchTerm && (
+              <button onClick={() => setSearchTerm('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
+
+          {/* Segmented filter control */}
+          <div className="flex gap-1 p-1 rounded-xl shrink-0" style={{ backgroundColor: '#e2e8f0' }}>
+            {filterTabs.map(f => {
+              const active = stockFilter === f.key
+              return (
+                <button
+                  key={f.key}
+                  onClick={() => setStockFilter(f.key)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
+                  style={active
+                    ? {
+                        backgroundColor: f.activeBg,
+                        color: f.activeColor,
+                        border: `1px solid ${f.activeBorder}`,
+                        boxShadow: '0 1px 4px rgba(0,0,0,0.12)',
+                      }
+                    : { color: '#64748b', border: '1px solid transparent' }
+                  }
+                >
+                  {f.label}
+                  <span
+                    className="rounded-full px-1.5 py-0.5 text-[10px] font-bold leading-none"
+                    style={active
+                      ? { backgroundColor: f.activeColor, color: '#fff' }
+                      : { backgroundColor: '#cbd5e1', color: '#475569' }
+                    }
+                  >
+                    {f.count}
+                  </span>
+                </button>
+              )
+            })}
+          </div>
         </div>
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-x-auto">
+        <table className="w-full text-sm border-collapse" style={{ minWidth: 760 }}>
             <thead>
-              <tr style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
+              <tr style={{ backgroundColor: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
                 <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide whitespace-nowrap">
                   <span className="flex items-center gap-1.5">Code <SortBtn col="code" /></span>
                 </th>
@@ -424,14 +451,14 @@ export function InventoryPage() {
                       <td className="px-4 py-3">
                         <div className="flex items-center justify-end gap-1">
                           <ActionBtn
-                            icon={TrendingUp}
+                            icon={PlusCircle}
                             label="Add Stock"
                             color="#16a34a"
                             hoverBg="#f0fdf4"
                             onClick={() => handleOpenStockDialog(product, 'add')}
                           />
                           <ActionBtn
-                            icon={TrendingDown}
+                            icon={MinusCircle}
                             label="Deduct Stock"
                             color="#ea580c"
                             hoverBg="#fff7ed"
@@ -459,7 +486,6 @@ export function InventoryPage() {
               )}
             </tbody>
           </table>
-        </div>
 
         {/* Table footer */}
         {!loading && filteredProducts.length > 0 && (
@@ -572,8 +598,8 @@ export function InventoryPage() {
           <DialogHeader>
             <DialogTitle className="text-base font-semibold text-slate-800 flex items-center gap-2">
               {stockForm.type === 'add'
-                ? <TrendingUp className="h-4 w-4 text-green-600" />
-                : <TrendingDown className="h-4 w-4 text-orange-500" />
+                ? <PlusCircle className="h-4 w-4 text-green-600" />
+                : <MinusCircle className="h-4 w-4 text-orange-500" />
               }
               {stockForm.type === 'add' ? 'Add Stock' : 'Deduct Stock'}
             </DialogTitle>
